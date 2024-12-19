@@ -6,8 +6,8 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 
-export const postRouter = createTRPCRouter({
-  hello: publicProcedure
+export const sourceRouter = createTRPCRouter({
+  youtubeToAudio: publicProcedure
     .input(z.object({ text: z.string() }))
     .query(({ input }) => {
       return {
@@ -15,7 +15,7 @@ export const postRouter = createTRPCRouter({
       };
     }),
 
-  create: protectedProcedure
+  source_text: protectedProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       return ctx.db.post.create({
@@ -38,4 +38,15 @@ export const postRouter = createTRPCRouter({
   getSecretMessage: protectedProcedure.query(() => {
     return "you can now see this secret message!";
   }),
+});
+
+
+import OpenAI from "openai";
+const openai = new OpenAI();
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  store: true,
+  messages: [
+    {"role": "user", "content": "write a haiku about ai"}
+  ]
 });
