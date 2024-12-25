@@ -6,8 +6,11 @@ import { ImageIcon, LightbulbIcon, TextIcon, YoutubeIcon } from "lucide-react";
 import Link from "next/link"; 
 import React from "react";
 import { AnimatedLoading } from "~/components/loading/AnimatedLoading";
+import { api } from "~/utils/api";
 
 export default function Home() { 
+  const sourceMutation = api.source.source.useMutation();
+  const [sourceText, setSourceText] = React.useState("");
   const [chosenMethod, setChosenMethod] = React.useState("auto");
   const [loading, setLoading] = React.useState(false);
 
@@ -15,10 +18,13 @@ export default function Home() {
     setChosenMethod(method);
   };
 
+  const onEnter = async () => {
+    await sourceMutation.mutateAsync({ url: sourceText });
+  };
+
   return (
     <Layout>
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-
         <div className="flex flex-col items-center gap-8 max-w-xl w-full">
           <div className="w-24 h-24 relative">
             <img
@@ -27,28 +33,29 @@ export default function Home() {
               className="w-full h-full rounded-3xl"
             />
           </div>
-
           <div className="w-full space-y-4">
             <div className="relative">
               {
-                loading ? 
+                (loading || sourceMutation.isPending) ? 
                   <div className="w-full h-10 flex items-center justify-center">  
                     <AnimatedLoading /> 
                   </div>: 
                   <Input 
                     placeholder="paste here . . . ."
                     className="w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
-                    onKeyDown={(e) => {
+                    value={sourceText}
+                    onChange={(e) => setSourceText(e.target.value)}
+                    onKeyDown={async (e) => {
                       if (e.key === "Enter") {
-                        setLoading(true);
-                        setTimeout(() => {
-                          setLoading(false);
-                        }, 5000);
+                        // setLoading(true);
+                        // setTimeout(() => {
+                        //   setLoading(false);
+                        // }, 5000);
+                        await onEnter();
                       }
                     }}
                   />}
             </div>
-
             <div className="flex items-center justify-between gap-1 flex-wrap">
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" className={`${chosenMethod === "auto" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("auto")}>
@@ -66,14 +73,10 @@ export default function Home() {
                 <Button variant="ghost" size="sm" className={`${chosenMethod === "text" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("text")}>
                   <span className="mr-2"> <TextIcon /> </span> text
                 </Button> 
-              </div>
-              {/* <Button variant="ghost" size="sm">
-                📋 paste
-              </Button> */}
+              </div> 
             </div>
           </div>
         </div>
-
         <div className="text-xs text-zinc-500">
           by continuing, you agree to{" "}
           <Link href="#" className="underline hover:text-white">

@@ -17,7 +17,7 @@ export const Layout: React.FC<LayoutProps> = ({
   return (
     <>
       <Head>
-        <title>{title ? title : "Sourec It"}</title>
+        <title>{title ? title : "Source It"}</title>
         <meta name="description" content="Source audio" />
         <link rel="icon" href="/favicon.ico" />
         {meta ? meta : null}
