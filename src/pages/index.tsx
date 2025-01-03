@@ -1,88 +1,83 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @next/next/no-img-element */
-import { Layout } from "~/components/layout";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input"; 
-import { ImageIcon, LightbulbIcon, TextIcon, YoutubeIcon } from "lucide-react";
-import Link from "next/link"; 
-import React from "react";
-import { AnimatedLoading } from "~/components/loading/AnimatedLoading";
-import { api } from "~/utils/api";
+import { Layout } from "~/components/layout"; 
+import React, { useEffect } from "react"; 
+import { api } from "~/utils/api"; 
+import { SearchView } from "~/components/views/searchVIew";
+import router from "next/router";
+import { determineTypeOfContent, convertTextToSourceParagraph } from "~/utils/functions";
+import { type SourceParagraph, type Source } from "~/types";
+import {v4 as uuid} from "uuid";
+import { useStore } from "~/hooks/use-store";
+import { LinesSpread } from "~/components/views/LineSpread";
 
 export default function Home() { 
+  const useRouer = router;
   const sourceMutation = api.source.source.useMutation();
+  // const [sourceText, setSourceText] = React.useState("https://youtu.be/Tu6GFBRd5eQ?si=oSC1BLo_IsKH7vGD");
   const [sourceText, setSourceText] = React.useState("");
   const [chosenMethod, setChosenMethod] = React.useState("auto");
   const [loading, setLoading] = React.useState(false);
+  const [sourceReady, setSourceReady] = React.useState(false);
+  const {setLocalSource, localSource} = useStore();
 
   const onClickMehod = (method: string) => {
     setChosenMethod(method);
   };
 
   const onEnter = async () => {
-    await sourceMutation.mutateAsync({ url: sourceText });
+    const type = determineTypeOfContent(sourceText);
+    setSourceReady(true);
+    if(type === "text" || type === "file") {
+      await useRouer.replace("?source=custom-text");
+    } else if(type === "link") {
+      await useRouer.replace("?source=custom-link");
+    } 
+    const sourceId = uuid();
+    const sourceLineItems = convertTextToSourceParagraph(sourceText, sourceId);
+    const newSource = {
+      id: sourceId,  
+      title: "Custom Source",
+      sourceType: type,
+      source: sourceText,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isDeleted: false,
+      sourceLineItems: sourceLineItems,      
+    } as Source;
+    setLocalSource(newSource);
   };
+
+  useEffect(() => {
+    if(localSource) {
+      setSourceReady(true);
+      (async () => await useRouer.replace("?source=custom-text"))();
+    }
+  } , []);
 
   return (
     <Layout>
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-8 max-w-xl w-full">
-          <div className="w-24 h-24 relative">
-            <img
-              src="/sourceit_white.webp"
-              alt="Logo" 
-              className="w-full h-full rounded-3xl"
+        {
+          sourceReady ? 
+            <LinesSpread 
+              textLoading={loading}  
+              setSourceReady={setSourceReady}
             />
-          </div>
-          <div className="w-full space-y-4">
-            <div className="relative">
-              {
-                (loading || sourceMutation.isPending) ? 
-                  <div className="w-full h-10 flex items-center justify-center">  
-                    <AnimatedLoading /> 
-                  </div>: 
-                  <Input 
-                    placeholder="paste here . . . ."
-                    className="w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
-                    value={sourceText}
-                    onChange={(e) => setSourceText(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key === "Enter") {
-                        // setLoading(true);
-                        // setTimeout(() => {
-                        //   setLoading(false);
-                        // }, 5000);
-                        await onEnter();
-                      }
-                    }}
-                  />}
-            </div>
-            <div className="flex items-center justify-between gap-1 flex-wrap">
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className={`${chosenMethod === "auto" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("auto")}>
-                  <span className="mr-2"><LightbulbIcon color="#f2c606" /> </span> auto
-                </Button>
-                <Button variant="ghost" size="sm" className={`${chosenMethod === "youtube" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("youtube")}>
-                  <span className="mr-2"><YoutubeIcon color="red" /> </span> youtube
-                </Button>
-                <Button variant="ghost" size="sm" className={`${chosenMethod === "audio" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("audio")}>
-                  <span className="mr-2">🎵</span> audio
-                </Button>             
-                <Button variant="ghost" size="sm" className={`${chosenMethod === "image" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("image")}>
-                  <span className="mr-2"> <ImageIcon color="purple" /> </span> image
-                </Button>
-                <Button variant="ghost" size="sm" className={`${chosenMethod === "text" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("text")}>
-                  <span className="mr-2"> <TextIcon /> </span> text
-                </Button> 
-              </div> 
-            </div>
-          </div>
-        </div>
-        <div className="text-xs text-zinc-500">
-          by continuing, you agree to{" "}
-          <Link href="#" className="underline hover:text-white">
-            terms and ethics of use
-          </Link>
-        </div>
+            :
+            <SearchView 
+              setSourceText={setSourceText}
+              sourceText={sourceText}
+              sourceMutation={sourceMutation}
+              chosenMethod={chosenMethod}
+              setChosenMethod={setChosenMethod}
+              loading={loading}
+              setLoading={setLoading}
+              onClickMehod={onClickMehod}
+              onEnter={onEnter}
+            />
+        }
+
       </main>
     </Layout>
   );

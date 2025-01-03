@@ -7,18 +7,23 @@ export interface Source {
     updatedAt: string;
     isDeleted: boolean;
     deletedAt: string;
-    sourceLineItems: SourceLineItem[];
+    sourceLineItems: SourceParagraph[];
 }
 
-export interface SourceLineItem {
-    id: string;
-    text: string;
+export interface SourceParagraph {
+    id: string; 
     sourceText: string;
     sourceId: string;
     generatedBy: "chatgt";
-    links: string[];
+    factCheck: StrucutredOutput;
+    upvote: number;
     indexInContext: number; // This is just to ensure that we keep the order of the source
+    userFactCheck?: StrucutredOutput;
     speaker?: string;
 }
 
-
+export interface StrucutredOutput {
+    validity: string, 
+    reason: string, 
+    sources: string[]
+}

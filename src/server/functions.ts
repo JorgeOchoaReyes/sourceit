@@ -3,6 +3,7 @@ import {Storage} from "@google-cloud/storage";
 import OpenAI from "openai";   
 import { pipeline } from "stream/promises";
 import { type Readable } from "stream";
+import { type StrucutredOutput } from "~/types";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAPI_KEY,
@@ -54,6 +55,33 @@ export const getYoutubeAudio = async (url: string, quality="low"): Promise<Reada
     console.log(error); 
     throw new Error("Failed to upload audio to storage");
   }
+};
+
+export const uploadBufferToBucket = async (buffer: Buffer, fileName: string, mimeType: string, _bucket: string) => {
+  const gcp_storage = new Storage(
+    {
+      projectId: serviceAccount.project_id,
+      credentials: serviceAccount,
+    }
+  ); 
+  console.log("Accessing storage  . . . . . ");
+  const bucket = gcp_storage.bucket(_bucket);
+  const file = bucket.file(fileName);
+  console.log("Uploading audio to storage . . . . . ");
+  const writeStream = file.createWriteStream({
+    metadata: {
+      contentType: mimeType,
+    },
+  });
+  await pipeline(buffer, writeStream).catch((error) => {
+    console.log(error);
+    throw new Error("Failed to upload audio to storage");
+  }).then(() => {
+    console.log("Uploaded to storage . . . . . ");
+  }).finally(() => {
+    console.log("Closing stream . . . . . ");
+    writeStream.end();
+  });
 };
 
 export const uploadAudioToStorage = async (url: string) => {
@@ -109,3 +137,32 @@ export const uploadAudioToStorage = async (url: string) => {
   }
 };
 
+export const factCheckerParagraphv1 = async (raw: string) => { 
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a fact-checking assistant. Respond to queries in this structured JSON format: " +
+            "{\"validity\": \"true/false\", \"reason\": \"reasoning text\", \"sources\": [\"source1\", \"source2\"]}." +
+            "For example, {\"validity\": \"true\", \"reason\": \"The statement is true because...\", \"sources\": [\"source1\", \"source2\"]}" + 
+            "If you are unable to fact-check the statement, please respond with an empty string.",
+        },
+        { role: "user", content: `Fact-check this statement: "${raw}"` },
+      ], 
+    });
+    const result = response.choices[0]?.message.content;
+    if(result && result.trim() !== "") {
+      const asObejct = JSON.parse(result) as StrucutredOutput;
+      return asObejct;
+    } else {
+      throw new Error("Failed to fact check the statement");
+    }
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to reach Open AI");
+  }
+
+};
