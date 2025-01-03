@@ -49,11 +49,11 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if(localSource) {
-      setSourceReady(true);
+    if(localSource) { 
       (async () => await useRouer.replace("?source=custom-text"))();
+      setSourceReady(true);
     }
-  } , []);
+  } , [localSource]);
 
   return (
     <Layout>

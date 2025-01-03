@@ -78,5 +78,6 @@
   }
   body {
     @apply bg-background text-foreground;
+    pointer-events: all !important;
   }
 }

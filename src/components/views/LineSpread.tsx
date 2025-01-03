@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { UndoIcon } from "lucide-react";
 import { TextLoading } from "../loading/TextLoading";
 import { FactCheckDrawer } from "../drawer/fact-check-drawer"; 
+import { api } from "~/utils/api"; 
 
 interface LinesSpreadProps {
     setSourceReady: (b: boolean) => void;
@@ -14,9 +15,40 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
   setSourceReady,
   textLoading
 }) => {
-  const {localSource, clearLocalSource} = useStore();
+  const {localSource, clearLocalSource, setLocalSource} = useStore();
   const [chosenParagraph, setChosenParagraph] = React.useState(-1);
   const [factCheckDrawerOpen, setFactCheckDrawerOpen] = React.useState(false);
+
+  const sourceMutation = api.source.source.useMutation();
+
+  const onClickBeginVerify = async (paragraph: number) => {
+    const foundParagraph = localSource?.sourceLineItems[paragraph];  
+    if(!foundParagraph) {
+      alert("No Paragraph found!");
+      return; 
+    } 
+    if(
+      foundParagraph?.factCheck?.validity !== "unknown" && 
+      foundParagraph?.factCheck.reason  !== "unknown" && 
+      foundParagraph?.factCheck.sources[0] !== "unknown"
+    ) { 
+      return;
+    } 
+    const factCheckedParagraph = await sourceMutation.mutateAsync({
+      raw: foundParagraph?.sourceText ?? "",
+      type: "text"
+    });   
+    console.log(factCheckedParagraph);
+    if(factCheckedParagraph && factCheckedParagraph.reason !== "unknown") { 
+      const newSource = {...localSource};
+      foundParagraph.factCheck = factCheckedParagraph;
+      newSource.sourceLineItems[paragraph] = foundParagraph;
+      setLocalSource(newSource);
+    } else {
+      alert("Failed to fact check, please try again.");
+    } 
+  };
+
   return (
     <div className="flex flex-col items-start justify-start h-full mt-10 w-full p-4"> 
       {
@@ -46,7 +78,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                     <div
                       key={lineItem.id} 
                       className="flex flex-row items-center justify-between w-full py-2" 
-                      onClick={()=>{
+                      onClick={async () => {
                         if(index === chosenParagraph) {
                           setChosenParagraph(-1);
                           setFactCheckDrawerOpen(false);
@@ -54,6 +86,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                         }
                         setChosenParagraph(index);
                         setFactCheckDrawerOpen(true);
+                        await onClickBeginVerify(index);
                       }} 
                     >
                       <div
@@ -79,6 +112,8 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
       <FactCheckDrawer 
         open={factCheckDrawerOpen}
         onClose={() => setFactCheckDrawerOpen(false)}
+        sourceParagraph={localSource?.sourceLineItems[chosenParagraph] ?? null}
+        loading={sourceMutation.isPending}
       />
     </div>
   );
