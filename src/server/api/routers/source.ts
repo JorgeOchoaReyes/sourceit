@@ -1,16 +1,23 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { uploadAudioToStorage } from "~/server/functions";
+import { uploadAudioToStorage, factCheckerParagraphv1 } from "~/server/functions"; 
 
 export const sourceRouter = createTRPCRouter({
   source: publicProcedure
-    .input(z.object({ url: z.string().min(1) }))
+    .input(z.object({ raw: z.string(), type: z.string() }))
     .mutation(async ({ input }) => {
       console.log("Getting audio . . . . . ");  
-      try {
-        const path = await uploadAudioToStorage(input.url,); 
+      try { 
         console.log("Success!");
-        return path;
+        if (input.type === "audio") {
+          return {};
+        } else if (input.type === "link") {
+          return {};
+        } else if (input.type === "image") {
+          return {};
+        } else if (input.type === "text") {
+          const source = await factCheckerParagraphv1(input.raw);
+        }
       } catch (error) { 
         console.log(error);
         throw new Error("Failed to get audio");
