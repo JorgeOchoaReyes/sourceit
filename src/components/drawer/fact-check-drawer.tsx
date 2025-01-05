@@ -44,7 +44,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel className="text-black">Models  </SelectLabel>  
-                  <SelectItem value="ChatGpt (GPT-4)">ChatGpt (GPT-4)</SelectItem>
+                  <SelectItem defaultChecked value="ChatGpt (GPT-4)">ChatGpt (GPT-4)</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

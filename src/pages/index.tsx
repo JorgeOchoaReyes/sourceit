@@ -56,16 +56,16 @@ export default function Home() {
     }
   } , [localSource]);
 
-  const testUploadMutation = api.source.testUpload.useMutation();
+  // const testUploadMutation = api.source.testUpload.useMutation();
 
   return (
     <Layout>
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <Button onClick={async () => {
+        {/* <Button onClick={async () => {
           await testUploadMutation.mutateAsync();
         }}>
           TEST
-        </Button>
+        </Button> */}
         {
           sourceReady ? 
             <LinesSpread 
