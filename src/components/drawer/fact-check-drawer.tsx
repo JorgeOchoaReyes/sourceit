@@ -26,25 +26,25 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
   loading,
 }) => { 
   return (
-    <Drawer open={open} onClose={onClose} >
+    <Drawer open={open} onClose={onClose}  >
       <DrawerContent 
         style={{
           userSelect: "auto"
         }}
         className="bg-neutral-900 text-white p-4 px-6"> 
         <div className="flex flex-row items-center justify-between">
-          <div className="flex flex-row items-center justify-start"> 
-            <p className="mr-10">Fact Check</p> 
+          <div className="flex flex-row items-center justify-start mb-5">  
             <AITag />  
           </div>
           <div className="flex flex-row items-center justify-center">
             <Select>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] text-black">
                 <SelectValue placeholder="Select Model" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel className="text-black">ChatGpt (GPT-4)</SelectLabel> 
+                  <SelectLabel className="text-black">Models  </SelectLabel>  
+                  <SelectItem value="ChatGpt (GPT-4)">ChatGpt (GPT-4)</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -67,17 +67,17 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                         <div className="text-lg p-2 flex flex-row items-center " > 
                           • <u>  Validity </u>: 
                           <div
-                            className="flex flex-row items-center justify-center ml-2"
+                            className="flex flex-row items-center justify-center ml-5"
                             style={{ 
                               backgroundColor: sourceParagraph.factCheck.validity === "true" ? "#00FF00" : "#ff0000",
                               borderRadius: "8px",
                               width: "fit-content",
                               color: sourceParagraph.factCheck.validity === "true" ? "black" : "white",
                               fontWeight: "bold",
-                              padding: 4
+                              padding: 6
                             }}
                           >{
-                              sourceParagraph.factCheck.validity === "true" ? <CheckCheckIcon /> : <XCircleIcon />
+                              sourceParagraph.factCheck.validity === "true" ? <CheckCheckIcon /> : <XCircleIcon className="mr-1" />
                             }{sourceParagraph.factCheck.validity === "true" ? "True" : "False"}</div>
                         </div>
                         <p className="text-lg p-2 "> 
