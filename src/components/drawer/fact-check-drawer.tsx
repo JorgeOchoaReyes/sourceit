@@ -8,7 +8,9 @@ import {
 import { Button } from "../ui/button";
 import { type SourceParagraph } from "~/types";
 import { TextLoading } from "../loading/TextLoading";
-import {CheckCheckIcon, XCircleIcon, SignalLow} from "lucide-react";
+import {CheckCheckIcon, XCircleIcon, } from "lucide-react";
+import { AITag } from "../tags/AITag";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
 
 interface FactCheckDrawerProps {
   open: boolean;
@@ -30,7 +32,24 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
           userSelect: "auto"
         }}
         className="bg-neutral-900 text-white p-4 px-6"> 
-        <p className="">Fact Check</p>
+        <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-row items-center justify-start"> 
+            <p className="mr-10">Fact Check</p> 
+            <AITag />  
+          </div>
+          <div className="flex flex-row items-center justify-center">
+            <Select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel className="text-black">ChatGpt (GPT-4)</SelectLabel> 
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         {
           loading ? <TextLoading size="sm" /> : <>
             <div className="w-full flex flex-col items-center justify-center p-2">
@@ -43,7 +62,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                       <p className="text-sm italic p-2 w-10/12">  
                         <q>{sourceParagraph.sourceText}</q>
                       </p>
-                      <hr className="w-11/12 my-4" />  
+                      <hr className="w-12/12 my-4" />  
                       <div className="w-10/12">
                         <div className="text-lg p-2 flex flex-row items-center " > 
                           • <u>  Validity </u>: 
@@ -53,7 +72,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                               backgroundColor: sourceParagraph.factCheck.validity === "true" ? "#00FF00" : "#ff0000",
                               borderRadius: "8px",
                               width: "fit-content",
-                              color: "black",
+                              color: sourceParagraph.factCheck.validity === "true" ? "black" : "white",
                               fontWeight: "bold",
                               padding: 4
                             }}
