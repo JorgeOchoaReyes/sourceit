@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { uploadAudioToStorage, factCheckerParagraphv1 } from "~/server/functions"; 
+import fs from "fs";
+import { uploadAudioToStorage, factCheckerParagraphv1, uploadImageToStorage } from "~/server/functions"; 
 
 export const sourceRouter = createTRPCRouter({
   source: publicProcedure
@@ -43,6 +44,23 @@ export const sourceRouter = createTRPCRouter({
           reason: "unknown",
           sources: ["unknown"],
         };
+      }
+    }),
+
+  testUpload: publicProcedure 
+    .mutation(async () => {
+      console.log("Getting image . . . . . ");
+      try { 
+        const localImage = "src\\server\\testImage.jpg";
+        const turnLocalImageToBuffer = fs
+          .readFileSync(localImage)
+          .toString("base64");
+        const datauri = `data:image/jpeg;base64,${turnLocalImageToBuffer}`;
+        const newFile = await uploadImageToStorage(datauri, "testImage");
+        return newFile;
+      } catch (error) {
+        console.log(error);
+        return "failed";
       }
     }),
 });

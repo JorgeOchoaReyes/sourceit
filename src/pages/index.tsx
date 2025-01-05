@@ -6,10 +6,11 @@ import { api } from "~/utils/api";
 import { SearchView } from "~/components/views/searchVIew";
 import router from "next/router";
 import { determineTypeOfContent, convertTextToSourceParagraph } from "~/utils/functions";
-import { type SourceParagraph, type Source } from "~/types";
+import { type Source } from "~/types";
 import {v4 as uuid} from "uuid";
 import { useStore } from "~/hooks/use-store";
 import { LinesSpread } from "~/components/views/LineSpread";
+import { Button } from "~/components/ui/button";
 
 export default function Home() { 
   const useRouer = router;
@@ -55,9 +56,16 @@ export default function Home() {
     }
   } , [localSource]);
 
+  const testUploadMutation = api.source.testUpload.useMutation();
+
   return (
     <Layout>
       <main className="flex-1 flex flex-col items-center justify-center p-4">
+        <Button onClick={async () => {
+          await testUploadMutation.mutateAsync();
+        }}>
+          TEST
+        </Button>
         {
           sourceReady ? 
             <LinesSpread 
@@ -76,8 +84,7 @@ export default function Home() {
               onClickMehod={onClickMehod}
               onEnter={onEnter}
             />
-        }
-
+        } 
       </main>
     </Layout>
   );

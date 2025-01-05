@@ -56,7 +56,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                       await onEnter();
                     }
                   }}
-                />
+                /> 
             }
           </div>
           <div className="flex items-center justify-between gap-1 flex-wrap">

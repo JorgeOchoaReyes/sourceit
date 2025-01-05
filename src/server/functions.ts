@@ -4,24 +4,51 @@ import OpenAI from "openai";
 import { pipeline } from "stream/promises";
 import { type Readable } from "stream";
 import { type StrucutredOutput } from "~/types";
+import vision from "@google-cloud/vision"; 
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAPI_KEY,
 });
 
 const gcpPath = "audio-1-transcribe";
-const serviceAccount = {
-  type: process.env.type,  
-  project_id: process.env.project_id, 
-  private_key_id: process.env.private_key_id,  
-  private_key: process.env.private_key,  
-  client_email: process.env.client_email, 
-  client_id: process.env.client_id, 
-  auth_uri: process.env.auth_uri,  
-  token_uri: process.env.token_uri,  
-  auth_provider_x509_cert_url: process.env.auth_provider_x509_cert_url,
-  client_x509_cert_url: process.env.client_x509_cert_url, 
-  universe_domain: process.env.universe_domain, 
+const gcpPathImage = "image-1-text"; 
+const encodedGcp = process.env.gcpEncoded ?? "";
+
+const getClientCredentials = () => { 
+  const decodedServiceAccount = Buffer.from(encodedGcp, "base64").toString("utf-8");
+  const credentials = JSON.parse(decodedServiceAccount) as {project_id: string, private_key: string, client_email: string};
+  return credentials;
+};
+
+export const uploadImageToStorage = async (dataUri: string, imageName: string) => {
+  const credentials = getClientCredentials();
+  const gcp_storage = new Storage(
+    {
+      projectId: credentials.project_id,
+      credentials: credentials,
+    }
+  ); 
+  console.log("Accessing storage  . . . . . "); 
+  try { 
+    await gcp_storage.bucket(gcpPathImage).upload("src\\server\\testImage.jpg", {
+      destination: `${imageName}.jpg`,
+    }); 
+    console.log("Successfully uploaded image to storage . . . . . ");
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    console.log("Failed", (error as {stack: any}).stack);
+  }
+};
+
+export const extractTextFromImage = async (bucketName: string, fileName: string) => { 
+  const credentials = getClientCredentials();
+  const client = new vision.ImageAnnotatorClient({
+    projectId: credentials.project_id,
+    credentials: credentials,
+  });
+  const [result] = await client.textDetection(`gs://${bucketName}/${fileName}`);
+  const detections = result.textAnnotations; 
+  detections?.forEach(text => console.log(text));
 };
 
 export const verifyYoutubeUrl = (url: string): boolean => {
@@ -58,10 +85,11 @@ export const getYoutubeAudio = async (url: string, quality="low"): Promise<Reada
 };
 
 export const uploadBufferToBucket = async (buffer: Buffer, fileName: string, mimeType: string, _bucket: string) => {
+  const credentials = getClientCredentials();
   const gcp_storage = new Storage(
     {
-      projectId: serviceAccount.project_id,
-      credentials: serviceAccount,
+      projectId: credentials.project_id,
+      credentials: credentials,
     }
   ); 
   console.log("Accessing storage  . . . . . ");
@@ -97,11 +125,11 @@ export const uploadAudioToStorage = async (url: string) => {
       highWaterMark: 1024 * 1024 * 10,
       download: false,
     });
-
+    const credentials = getClientCredentials();
     const gcp_storage = new Storage(
       {
-        projectId: serviceAccount.project_id,
-        credentials: serviceAccount,
+        projectId: credentials.project_id,
+        credentials: credentials,
       }
     ); 
     console.log("Accessing storage  . . . . . ");
@@ -137,7 +165,7 @@ export const uploadAudioToStorage = async (url: string) => {
   }
 };
 
-export const factCheckerParagraphv1 = async (raw: string) => { 
+export const factCheckerParagraphv1 = async (raw: string, model?: string) => { 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4",
