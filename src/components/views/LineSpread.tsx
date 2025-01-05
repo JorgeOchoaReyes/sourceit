@@ -21,7 +21,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
 
   const sourceMutation = api.source.source.useMutation();
 
-  const onClickBeginVerify = async (paragraph: number) => {
+  const onClickBeginFactCheck = async (paragraph: number) => {
     const foundParagraph = localSource?.sourceLineItems[paragraph];  
     if(!foundParagraph) {
       alert("No Paragraph found!");
@@ -37,8 +37,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
     const factCheckedParagraph = await sourceMutation.mutateAsync({
       raw: foundParagraph?.sourceText ?? "",
       type: "text"
-    });   
-    console.log(factCheckedParagraph);
+    });    
     if(factCheckedParagraph && factCheckedParagraph.reason !== "unknown") { 
       const newSource = {...localSource};
       foundParagraph.factCheck = factCheckedParagraph;
@@ -71,13 +70,13 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                 <UndoIcon color="blue" size={64} /> Reset
               </Button>
             </div>
-            <div className="flex flex-col items-start justify-center p-4 w-full">
+            <div className="flex flex-col items-start justify-center p-4 w-full max-w-[100vw]">
               {
                 localSource?.sourceLineItems.map((lineItem, index) => {
                   return (
                     <div
                       key={lineItem.id} 
-                      className="flex flex-row items-center justify-between w-full py-2" 
+                      className="flex flex-row items-center justify-between w-full py-2 max-w-[100vw] flex-wrap" 
                       onClick={async () => {
                         if(index === chosenParagraph) {
                           setChosenParagraph(-1);
@@ -86,7 +85,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                         }
                         setChosenParagraph(index);
                         setFactCheckDrawerOpen(true);
-                        await onClickBeginVerify(index);
+                        await onClickBeginFactCheck(index);
                       }} 
                     >
                       <div
@@ -98,8 +97,8 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-900 text-white text-xs">
                           {index + 1}
                         </div>
-                        <div className="text-md text-white w-full">
-                          {lineItem.sourceText}
+                        <div className="text-md text-white flex flex-wrap">
+                          {lineItem.sourceText}  
                         </div>
                       </div> 
                     </div>

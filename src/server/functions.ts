@@ -29,26 +29,55 @@ export const uploadImageToStorage = async (dataUri: string, imageName: string) =
     }
   ); 
   console.log("Accessing storage  . . . . . "); 
+  const matches = /^data:([A-Za-z-+\/]+);base64,(.+)$/.exec(dataUri); 
   try { 
-    await gcp_storage.bucket(gcpPathImage).upload("src\\server\\testImage.jpg", {
-      destination: `${imageName}.jpg`,
-    }); 
+    const fileContents = Buffer.from(matches?.[2] ?? "", "base64");
+    const bucket = gcp_storage.bucket(gcpPathImage);
+
+    const expirationDate = new Date();
+    const daysTillExpiration = 1;
+    expirationDate.setDate(expirationDate?.getDate() + daysTillExpiration); 
+
+    const file = bucket.file(imageName);
+    await file.save(fileContents, {
+      metadata: {
+        contentType: matches?.[1],
+        metadata: {
+          expires: expirationDate.toISOString(),
+          "Custom-Time": expirationDate.toISOString(),
+        },
+      },
+    });
+    await file.setMetadata({
+      metadata: {
+        expires: expirationDate.toISOString(),
+        "Custom-Time": expirationDate.toISOString(),
+      },
+    });
     console.log("Successfully uploaded image to storage . . . . . ");
+    const pathOfImage = `gs://${gcpPathImage}/${imageName}`;
+    return pathOfImage;
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log("Failed", (error as {stack: any}).stack);
   }
 };
 
-export const extractTextFromImage = async (bucketName: string, fileName: string) => { 
+export const extractTextFromImage = async (imagePath: string) => { 
   const credentials = getClientCredentials();
   const client = new vision.ImageAnnotatorClient({
     projectId: credentials.project_id,
     credentials: credentials,
   });
-  const [result] = await client.textDetection(`gs://${bucketName}/${fileName}`);
+  const [result] = await client.textDetection(`${imagePath}`);
   const detections = result.textAnnotations; 
-  detections?.forEach(text => console.log(text));
+  let extractedText = "";
+  const text = detections?.[0]?.description;
+  if (text) {
+    extractedText = text;
+  }
+  extractedText = extractedText.replaceAll(/\n/g, " ");
+  return extractedText;
 };
 
 export const verifyYoutubeUrl = (url: string): boolean => {
@@ -176,16 +205,18 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
             "You are a fact-checking assistant. Respond to queries in this structured JSON format: " +
             "{\"validity\": \"true/false\", \"reason\": \"reasoning text\", \"sources\": [\"source1\", \"source2\"]}." +
             "For example, {\"validity\": \"true\", \"reason\": \"The statement is true because...\", \"sources\": [\"source1\", \"source2\"]}" + 
-            "If you are unable to fact-check the statement, please respond with an empty string.",
+            "If you are unable to fact-check the statement, please respond with {\"validity\": \"unavailble\", \"reason\": \"unavailble\", \"sources\": [\"unavailble\"]}" +
+            "Ensure that the sources are valid URLs.",
         },
         { role: "user", content: `Fact-check this statement: "${raw}"` },
       ], 
     });
-    const result = response.choices[0]?.message.content;
+    const result = response.choices[0]?.message.content; 
     if(result && result.trim() !== "") {
-      const asObejct = JSON.parse(result) as StrucutredOutput;
+      const asObejct = JSON.parse(result) as StrucutredOutput; 
       return asObejct;
     } else {
+      console.log("[Server] Failed to fact check the statement");
       throw new Error("Failed to fact check the statement");
     }
   } catch (error) {
