@@ -37,7 +37,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
             <AITag />  
           </div>
           <div className="flex flex-row items-center justify-center">
-            <Select>
+            <Select value="ChatGpt (GPT-4)" >
               <SelectTrigger className="w-[180px] text-black">
                 <SelectValue placeholder="Select Model" />
               </SelectTrigger>
