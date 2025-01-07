@@ -4,6 +4,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { ImageIcon, LightbulbIcon, TextIcon, YoutubeIcon } from "lucide-react";
 import Link from "next/link";
 import { AnimatedLoading } from "../loading/AnimatedLoading";
+import { Input } from "../ui/input";
 
 interface SearchViewProps {
     sourceMutation: {isPending: boolean};
@@ -50,7 +51,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 : 
                 <>
                   <Textarea
-                    placeholder="paste text or drop file here . . . ."
+                    placeholder="paste text here. . . ."
                     className="w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
                     value={sourceText}  
                     onChange={(e) => setSourceText(e.target.value)}
@@ -60,10 +61,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
                       }
                     }}
                   /> 
-                  <input 
+                  <Input 
                     type="file" 
-                    accept=".png,.jpg,.jpeg" 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    className="cursor-pointer mt-1"
+                    accept=".png,.jpg,.jpeg"  
                     onChange={async (e) => {
                       setFile(e.target.files?.[0] ?? null);
                     }}
