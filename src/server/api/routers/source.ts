@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import fs from "fs";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc"; 
 import { uploadAudioToStorage, factCheckerParagraphv1, uploadImageToStorage, extractTextFromImage } from "~/server/functions"; 
 import { v4 as uuid } from "uuid";
 
@@ -10,26 +9,8 @@ export const sourceRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       console.log("Fact checking . . . . . ");  
       try { 
-        console.log("Success!");
-        if (input.type === "audio") {
-          return {
-            validity: "unknown",
-            reason: "unknown",
-            sources: ["unknown"],
-          };
-        } else if (input.type === "link") {
-          return {
-            validity: "unknown",
-            reason: "unknown",
-            sources: ["unknown"],
-          };
-        } else if (input.type === "image") {
-          return {
-            validity: "unknown",
-            reason: "unknown",
-            sources: ["unknown"],
-          };
-        } else if (input.type === "text") {
+        console.log("Success!"); 
+        if (input.type === "text") {
           const source = await factCheckerParagraphv1(input.raw);
           return source;
         }

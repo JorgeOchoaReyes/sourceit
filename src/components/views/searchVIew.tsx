@@ -4,6 +4,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { ImageIcon, LightbulbIcon, TextIcon, YoutubeIcon } from "lucide-react";
 import Link from "next/link";
 import { AnimatedLoading } from "../loading/AnimatedLoading";
+import { Input } from "../ui/input";
 
 interface SearchViewProps {
     sourceMutation: {isPending: boolean};
@@ -14,7 +15,8 @@ interface SearchViewProps {
     loading: boolean;
     setLoading: (b: boolean) => void;
     onClickMehod: (type: string) => void;
-    onEnter: () => Promise<void>;
+    onEnter: () => Promise<void>; 
+    setFile: (f: File | null) => void;
 }
 
 export const SearchView: React.FC<SearchViewProps> = ({
@@ -26,7 +28,8 @@ export const SearchView: React.FC<SearchViewProps> = ({
   loading,
   setLoading,
   onClickMehod,
-  onEnter,
+  onEnter, 
+  setFile
 }) => {
   return (
     <>
@@ -44,19 +47,29 @@ export const SearchView: React.FC<SearchViewProps> = ({
               (loading || sourceMutation.isPending) ? 
                 <div className="w-full h-10 flex items-center justify-center">  
                   <AnimatedLoading /> 
-                </div>: 
-                <Textarea
-                  placeholder="paste here . . . ."
-                  className="w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
-                  value={sourceText} 
-
-                  onChange={(e) => setSourceText(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter") { 
-                      await onEnter();
-                    }
-                  }}
-                /> 
+                </div>
+                : 
+                <>
+                  <Textarea
+                    placeholder="paste text here. . . ."
+                    className="w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
+                    value={sourceText}  
+                    onChange={(e) => setSourceText(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter") { 
+                        await onEnter();
+                      }
+                    }}
+                  /> 
+                  <Input 
+                    type="file" 
+                    className="cursor-pointer mt-1"
+                    accept=".png,.jpg,.jpeg"  
+                    onChange={async (e) => {
+                      setFile(e.target.files?.[0] ?? null);
+                    }}
+                  />
+                </>
             }
           </div>
           <div className="flex items-center justify-between gap-1 flex-wrap">
