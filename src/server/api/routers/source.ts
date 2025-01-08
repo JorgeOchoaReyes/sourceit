@@ -46,6 +46,12 @@ export const sourceRouter = createTRPCRouter({
         return "failed";
       }
     }),
+  transcribeYt: publicProcedure
+    .input(z.object({ ytLink: z.string() }))
+    .mutation(async ({ input }) => {
+      console.log("Transcribing . . . . . ");
+      
+    }),
   testUpload: publicProcedure 
     .mutation(async () => {
       console.log("Getting image . . . . . ");
