@@ -41,3 +41,30 @@ export const convertTextToSourceParagraph = (text: string, sourceId: string) => 
     } as SourceParagraph;
   });
 };
+
+export const convertTranscribeToSourceParagraph = (
+  transcription: {
+    text: string,
+    speakerTag: number,
+    time: string,
+  }[],
+  sourceId: string
+) => {
+  return transcription.map((t, i) => {
+    return {
+      id: uuid(),
+      sourceText: t.text,
+      sourceId: sourceId,
+      generatedBy: "chatgt",
+      factCheck: {
+        validity: "unknown",
+        reason: "unknown",
+        sources: [],
+      },
+      upvote: 0,
+      downvote: 0,
+      indexInContext: i,
+      speaker: t.speakerTag.toString(),
+    } as SourceParagraph;
+  });
+};

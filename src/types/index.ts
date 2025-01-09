@@ -1,12 +1,12 @@
 export interface Source { 
     id: string; 
     title: string;
-    sourceType: "auto" | "youtube" | "audio" | "image" | "text";
+    sourceType: "auto" | "link" | "audio" | "image" | "text";
     source: string;
     createdAt: string;
     updatedAt: string;
     isDeleted: boolean;
-    deletedAt: string;
+    deletedAt?: string;
     sourceLineItems: SourceParagraph[];
 }
 
