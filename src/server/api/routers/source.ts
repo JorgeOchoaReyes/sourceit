@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc"; 
-import { uploadAudioToStorage, factCheckerParagraphv1, uploadImageToStorage, extractTextFromImage } from "~/server/functions"; 
+import { 
+  factCheckerParagraphv1, 
+  uploadImageToStorage, 
+  extractTextFromImage, 
+  verifyYoutubeUrl, 
+  getYoutubeAudio, 
+  uploadYtToBucket, 
+  getYoutubeDetails,
+  transcribeAudio
+} from "~/server/functions"; 
 import { v4 as uuid } from "uuid";
 
 export const sourceRouter = createTRPCRouter({
@@ -50,16 +59,23 @@ export const sourceRouter = createTRPCRouter({
     .input(z.object({ ytLink: z.string() }))
     .mutation(async ({ input }) => {
       console.log("Transcribing . . . . . ");
-      
-    }),
-  testUpload: publicProcedure 
-    .mutation(async () => {
-      console.log("Getting image . . . . . ");
-      try {  
- 
-      } catch (error) {
-        console.log(error);
+      const ytLink = input.ytLink;
+      const verifyYoutubeUrlResult = verifyYoutubeUrl(ytLink);
+      if (!verifyYoutubeUrlResult) {
         return "failed";
       }
-    }),
+      const getYoutubeAudioResult = await getYoutubeAudio(ytLink); 
+      if (!getYoutubeAudioResult) {
+        return "failed";
+      }
+      const ytDetails = await getYoutubeDetails(ytLink);
+      const pathToBucket = await uploadYtToBucket(getYoutubeAudioResult, `${ytDetails.id}.mp3`,);
+      console.log("Transcription in progress . . . . . ", pathToBucket);
+      const text = await transcribeAudio(pathToBucket);
+      console.log("Transcription complete . . . . . ");   
+      return {
+        text,
+        ytDetails,
+      };
+    }), 
 });

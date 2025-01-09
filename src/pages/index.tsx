@@ -5,18 +5,19 @@ import React, { useEffect } from "react";
 import { api } from "~/utils/api"; 
 import { SearchView } from "~/components/views/searchVIew";
 import router from "next/router";
-import { determineTypeOfContent, convertTextToSourceParagraph } from "~/utils/functions";
+import { determineTypeOfContent, convertTextToSourceParagraph, convertTranscribeToSourceParagraph } from "~/utils/functions";
 import { type Source } from "~/types";
 import {v4 as uuid} from "uuid";
 import { useStore } from "~/hooks/use-store";
 import { LinesSpread } from "~/components/views/LineSpread";
+import { Button } from "~/components/ui/button";
 
 export default function Home() { 
   const useRouer = router;
   const {setLocalSource, localSource} = useStore();
   const sourceMutation = api.source.source.useMutation();
   const textFromImageMutation = api.source.textFromImage.useMutation();
-  // const [sourceText, setSourceText] = React.useState("https://youtu.be/Tu6GFBRd5eQ?si=oSC1BLo_IsKH7vGD");
+  const ytTranscribe = api.source.transcribeYt.useMutation(); 
   const [sourceText, setSourceText] = React.useState("");
   const [chosenMethod, setChosenMethod] = React.useState("auto");
   const [loading, setLoading] = React.useState(false);
@@ -46,6 +47,29 @@ export default function Home() {
       const text = await textFromImageMutation.mutateAsync({dataUri});
       textToUse = text;
     } 
+    if(type === "link") {
+      const transcribeResults = await ytTranscribe.mutateAsync({
+        ytLink: sourceText.trim(),
+      });
+      if(transcribeResults === "failed") {
+        alert("Failed to transcribe youtube video");
+        return;
+      } 
+      const sourceId = uuid();
+      const sourceLineItems = convertTranscribeToSourceParagraph(transcribeResults.text, sourceId);
+      const newSource = {
+        id: sourceId,  
+        title: transcribeResults.ytDetails.title,
+        sourceType: type,
+        source: textToUse,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isDeleted: false,
+        sourceLineItems: sourceLineItems,      
+      } as Source;
+      setLocalSource(newSource);
+      return;
+    }  
     const sourceId = uuid();
     const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
     const newSource = {
@@ -66,22 +90,15 @@ export default function Home() {
       (async () => await useRouer.replace("?source-custom-text"))();
       setSourceReady(true);
     }
-  } , [localSource]);
-
-  // const testUploadMutation = api.source.testUpload.useMutation();
+  } , [localSource]); 
 
   return (
     <Layout>
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        {/* <Button onClick={async () => {
-          await testUploadMutation.mutateAsync();
-        }}>
-          TEST
-        </Button> */}
         {
           sourceReady ? 
             <LinesSpread 
-              textLoading={loading || textFromImageMutation.isPending}  
+              textLoading={loading || textFromImageMutation.isPending || ytTranscribe.isPending}  
               setSourceReady={setSourceReady}
             />
             :

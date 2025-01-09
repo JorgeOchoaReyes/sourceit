@@ -5,23 +5,26 @@ import { pipeline } from "stream/promises";
 import { type Readable } from "stream";
 import { type StrucutredOutput } from "~/types";
 import vision from "@google-cloud/vision"; 
+import { v1p1beta1 } from "@google-cloud/speech";  
+
+const { SpeechClient } = v1p1beta1;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAPI_KEY,
 });
 
-const gcpPath = "audio-1-transcribe";
+const gcpPathAudio = "audio-1-transcribe";
 const gcpPathImage = "image-1-text"; 
 const encodedGcp = process.env.gcpEncoded ?? "";
 
-const getClientCredentials = () => { 
+const getGcpClientCredentials = () => { 
   const decodedServiceAccount = Buffer.from(encodedGcp, "base64").toString("utf-8");
   const credentials = JSON.parse(decodedServiceAccount) as {project_id: string, private_key: string, client_email: string};
   return credentials;
 };
 
 export const uploadImageToStorage = async (dataUri: string, imageName: string) => {
-  const credentials = getClientCredentials();
+  const credentials = getGcpClientCredentials();
   const gcp_storage = new Storage(
     {
       projectId: credentials.project_id,
@@ -64,7 +67,7 @@ export const uploadImageToStorage = async (dataUri: string, imageName: string) =
 };
 
 export const extractTextFromImage = async (imagePath: string) => { 
-  const credentials = getClientCredentials();
+  const credentials = getGcpClientCredentials();
   const client = new vision.ImageAnnotatorClient({
     projectId: credentials.project_id,
     credentials: credentials,
@@ -93,7 +96,17 @@ export const verifyYoutubeUrl = (url: string): boolean => {
   return isValid;
 };
 
-export const getYoutubeAudio = async (url: string, quality="low"): Promise<Readable> => {
+export const getYoutubeDetails = async (url: string): Promise<{ id:string, title: string }> => {
+  youtubeStream.setApiKey(process.env.YOUTUBE_API_KEY ?? ""); 
+  youtubeStream.setPreference("api");  
+  const name = await youtubeStream.getInfo(url);
+  return{
+    id: name.id,
+    title: name.title,
+  };
+};
+
+export const getYoutubeAudio = async (url: string, quality="low"): Promise<Readable> => { 
   try {
     youtubeStream.setApiKey(process.env.YOUTUBE_API_KEY ?? ""); 
     youtubeStream.setPreference("api"); 
@@ -103,95 +116,116 @@ export const getYoutubeAudio = async (url: string, quality="low"): Promise<Reada
       quality: quality as youtubeStream.quality,
       type: "audio",
       highWaterMark: 1024 * 1024 * 10,
-      download: false,
-    });
- 
+      download: true,
+    }); 
     return audioStream.stream;
   } catch (error) {
     console.log(error); 
     throw new Error("Failed to upload audio to storage");
   }
-};
+}; 
 
-export const uploadBufferToBucket = async (buffer: Buffer, fileName: string, mimeType: string, _bucket: string) => {
-  const credentials = getClientCredentials();
-  const gcp_storage = new Storage(
-    {
+export const uploadYtToBucket = async (readable: Readable, fileName: string) => {
+  const credentials = getGcpClientCredentials();
+  const gcp_storage = new Storage({
+    projectId: credentials.project_id,
+    credentials: credentials,
+  });  
+  console.log("Accessing storage  . . . . . ");
+  const bucket = gcp_storage.bucket(gcpPathAudio);
+  const file = bucket.file(fileName);
+  const writeStream = file.createWriteStream();
+  await pipeline(readable, writeStream);
+  console.log("Successfully uploaded audio to storage . . . . . ");
+  return `gs://${gcpPathAudio}/${fileName}`;
+}; 
+ 
+export const transcribeAudio = async (path: string) => { 
+  console.log("Transcribing audio . . . . . ");
+  const credentials = getGcpClientCredentials();
+  try {
+    const client = new SpeechClient({
       projectId: credentials.project_id,
       credentials: credentials,
-    }
-  ); 
-  console.log("Accessing storage  . . . . . ");
-  const bucket = gcp_storage.bucket(_bucket);
-  const file = bucket.file(fileName);
-  console.log("Uploading audio to storage . . . . . ");
-  const writeStream = file.createWriteStream({
-    metadata: {
-      contentType: mimeType,
-    },
-  });
-  await pipeline(buffer, writeStream).catch((error) => {
-    console.log(error);
-    throw new Error("Failed to upload audio to storage");
-  }).then(() => {
-    console.log("Uploaded to storage . . . . . ");
-  }).finally(() => {
-    console.log("Closing stream . . . . . ");
-    writeStream.end();
-  });
-};
-
-export const uploadAudioToStorage = async (url: string) => {
-  try {
-    youtubeStream.setApiKey(process.env.YOUTUBE_API_KEY ?? ""); 
-    youtubeStream.setPreference("api"); 
-    const info = await youtubeStream.getInfo(url); 
-    console.log(`Video title: ${info.title} - ${info.id}`);
-    // Get the audio stream
-    const audioStream = await youtubeStream.stream(url, {
-      quality: "low",
-      type: "audio",
-      highWaterMark: 1024 * 1024 * 10,
-      download: false,
-    });
-    const credentials = getClientCredentials();
-    const gcp_storage = new Storage(
-      {
-        projectId: credentials.project_id,
-        credentials: credentials,
-      }
-    ); 
-    console.log("Accessing storage  . . . . . ");
-
-    const bucket = gcp_storage.bucket(gcpPath);
-    const newFile = `${info.id}.m4a`;
-    const file = bucket.file(newFile, );
-
-    console.log("Uploading audio to storage . . . . . ");
-    const writeStream = file.createWriteStream({
-      metadata: {
-        contentType: "audio/mpeg",
+    }); 
+    const response = await client.recognize({
+      audio: { uri: path },
+      config: {
+        encoding: "MP3",
+        sampleRateHertz: 16000,
+        languageCode: "en-US",
+        enableSpeakerDiarization: true,
       },
     });
-
-    await pipeline(audioStream.stream, writeStream).catch((error) => {
-      console.log(error);
-      throw new Error("Failed to upload audio to storage");
-    }).then(() => {
-      console.log("Audio uploaded to storage . . . . . ");
-    }).finally(() => {
-      console.log("Closing stream . . . . . ");
-      audioStream.stream.destroy();
-      writeStream.end();
-    });
-
-    // Start downloading the audio 
-
-    return "asd"+".m4a";
+    if(response[0]?.results?.length === 0) {
+      throw new Error("Failed to transcribe audio");
+    }
+    const transcription = [] as {
+      text: string,
+      speakerTag: number,
+      time: string,
+    }[];
+    const data = response[0].results; 
+    const lastElement = data?.[data?.length - 1];  
+    const alternative = lastElement?.alternatives;
+    alternative?.forEach((alt) => { 
+      const words = alt.words;
+      const breakdown = {} as Record<string, Record<string, string>>;
+      words?.forEach((word,) => { 
+        const speakerWord = word.word ?? "";
+        const speakerTag = word.speakerTag?.toString() ?? "0";
+        const time = word.startTime?.seconds?.toString() ?? ""; 
+        if (breakdown[time]) {
+          if(breakdown[time][speakerTag]) {
+            const current = breakdown[time][speakerTag];
+            breakdown[time] = { 
+              ...breakdown[time],
+              [speakerTag]: current + " " + speakerWord,
+            };
+          } else { 
+            breakdown[time] = { 
+              ...breakdown[time],
+              [speakerTag]: speakerWord,
+            };
+          }
+        } else { 
+          breakdown[time] = { 
+            [speakerTag]: speakerWord,
+          };
+        }
+      }); 
+      Object.keys(breakdown).sort().forEach((time) => { 
+        const speakers = breakdown[time];
+        Object.keys(speakers ?? {}).forEach((speaker) => { 
+          const prevTranscription = transcription?.[transcription?.length - 1] ?? null;
+          const prevSpeaker = prevTranscription?.speakerTag ?? 0; 
+          const currentspeaker = parseInt(speaker);
+          if (prevSpeaker === currentspeaker) {
+            const prevText = prevTranscription?.text ?? "";
+            const currentText = speakers?.[speaker] ?? "";
+            const newText = prevText + " " + currentText;
+            transcription[transcription?.length - 1] = {
+              text: newText,
+              speakerTag: currentspeaker,
+              time: time,
+            };
+          } else {
+            transcription.push({
+              text: speakers?.[speaker] ?? "",
+              speakerTag: currentspeaker,
+              time: time,
+            });
+          }
+        });
+      });
+    });  
+    return transcription.sort((a, b) => {
+      return parseInt(a.time) - parseInt(b.time);
+    }); 
   } catch (error) {
-    console.log(error);
-    throw new Error("Failed to upload audio to storage");
-  }
+    console.log("error", error);
+    throw new Error("Failed to transcribe audio");
+  } 
 };
 
 export const factCheckerParagraphv1 = async (raw: string, model?: string) => { 
@@ -203,7 +237,7 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
           role: "system",
           content:
             "You are a fact-checking assistant. Respond to queries in this structured JSON format: " +
-            "{\"validity\": \"true/false\", \"reason\": \"reasoning text\", \"sources\": [\"source1\", \"source2\"]}." +
+            "{\"validity\": \"true/false/unknown\", \"reason\": \"reasoning text\", \"sources\": [\"source1\", \"source2\"]}." +
             "For example, {\"validity\": \"true\", \"reason\": \"The statement is true because...\", \"sources\": [\"source1\", \"source2\"]}" + 
             "If you are unable to fact-check the statement, please respond with {\"validity\": \"unavailble\", \"reason\": \"unavailble\", \"sources\": [\"unavailble\"]}" +
             "Ensure that the sources are valid URLs.",
@@ -212,6 +246,7 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
       ], 
     });
     const result = response.choices[0]?.message.content; 
+    console.log(result);
     if(result && result.trim() !== "") {
       const asObejct = JSON.parse(result) as StrucutredOutput; 
       return asObejct;
@@ -222,6 +257,5 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
   } catch (error) {
     console.log(error);
     throw new Error("Failed to reach Open AI");
-  }
-
+  } 
 };
