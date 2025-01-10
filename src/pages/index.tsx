@@ -32,57 +32,44 @@ export default function Home() {
     setSourceReady(true);
     if(type === "text" || type === "file") {
       await useRouer.replace("?source=custom-text");
-    } else if(type === "link") {
+      let textToUse = sourceText;
+      if(fileToProcess) {
+        const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const dataUri = await fileToDataUri(fileToProcess);
+        const text = await textFromImageMutation.mutateAsync({dataUri});
+        textToUse = text;
+        const sourceId = uuid();
+        const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
+        const newSource = {
+          id: sourceId,  
+          title: "Custom Source",
+          sourceType: type,
+          source: textToUse,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isDeleted: false,
+          sourceLineItems: sourceLineItems,      
+        } as Source;
+        setLocalSource(newSource);
+      } 
+    } 
+    else if(type === "link") {
       await useRouer.replace("?source=custom-link");
-    } 
-    let textToUse = sourceText;
-    if(fileToProcess) {
-      const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const dataUri = await fileToDataUri(fileToProcess);
-      const text = await textFromImageMutation.mutateAsync({dataUri});
-      textToUse = text;
-    } 
-    if(type === "link") {
       const transcribeResults = await ytTranscribe.mutateAsync({
         ytLink: sourceText.trim(),
       });
       if(transcribeResults === "failed") {
         alert("Failed to transcribe youtube video");
         return;
-      } 
-      const sourceId = uuid();
-      const sourceLineItems = convertTranscribeToSourceParagraph(transcribeResults.text, sourceId);
-      const newSource = {
-        id: sourceId,  
-        title: transcribeResults.ytDetails.title,
-        sourceType: type,
-        source: textToUse,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isDeleted: false,
-        sourceLineItems: sourceLineItems,      
-      } as Source;
-      setLocalSource(newSource);
+      }  
+      setLocalSource(transcribeResults.source);
       return;
     }  
-    const sourceId = uuid();
-    const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
-    const newSource = {
-      id: sourceId,  
-      title: "Custom Source",
-      sourceType: type,
-      source: textToUse,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isDeleted: false,
-      sourceLineItems: sourceLineItems,      
-    } as Source;
-    setLocalSource(newSource);
   };
 
   useEffect(() => {

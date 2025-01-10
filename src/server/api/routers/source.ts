@@ -8,15 +8,16 @@ import {
   getYoutubeAudio, 
   uploadYtToBucket, 
   getYoutubeDetails,
-  transcribeAudio
+  transcribeAudio,
+  convertTextToSourceParagraph
 } from "~/server/functions"; 
 import { v4 as uuid } from "uuid";
+import { type Source } from "~/types";
 
 export const sourceRouter = createTRPCRouter({
   source: publicProcedure
     .input(z.object({ raw: z.string(), type: z.string() }))
-    .mutation(async ({ input }) => {
-      console.log("Fact checking . . . . . ");  
+    .mutation(async ({ input }) => { 
       try { 
         console.log("Success!"); 
         if (input.type === "text") {
@@ -39,11 +40,9 @@ export const sourceRouter = createTRPCRouter({
     }),
   textFromImage: publicProcedure
     .input(z.object({ dataUri: z.string() }))
-    .mutation(async ({ input }) => {
-      console.log("Getting image . . . . . ");
+    .mutation(async ({ input }) => { 
       try { 
-        const id = uuid(); 
-        console.log("Uploading image to storage . . . . . ");
+        const id = uuid();  
         const newFilePath = await uploadImageToStorage(input.dataUri, id); 
         if(!newFilePath) {
           return "failed";
@@ -57,24 +56,36 @@ export const sourceRouter = createTRPCRouter({
     }),
   transcribeYt: publicProcedure
     .input(z.object({ ytLink: z.string() }))
-    .mutation(async ({ input }) => {
-      console.log("Transcribing . . . . . ");
+    .mutation(async ({ input, ctx }) => { 
+      const db = ctx.db; 
       const ytLink = input.ytLink;
       const verifyYoutubeUrlResult = verifyYoutubeUrl(ytLink);
       if (!verifyYoutubeUrlResult) {
         return "failed";
-      }
+      } 
       const getYoutubeAudioResult = await getYoutubeAudio(ytLink); 
       if (!getYoutubeAudioResult) {
         return "failed";
       }
       const ytDetails = await getYoutubeDetails(ytLink);
-      const pathToBucket = await uploadYtToBucket(getYoutubeAudioResult, `${ytDetails.id}.mp3`,);
-      console.log("Transcription in progress . . . . . ", pathToBucket);
-      const text = await transcribeAudio(pathToBucket);
-      console.log("Transcription complete . . . . . ");   
+      const pathToBucket = await uploadYtToBucket(getYoutubeAudioResult, `${ytDetails.id}.mp3`,); 
+      const text = await transcribeAudio(pathToBucket);  
+
+      const sourceId = uuid(); 
+      const sourceLineItems = convertTextToSourceParagraph(text ?? "", sourceId);
+      const newSource = {
+        id: sourceId,  
+        title: ytDetails.title,
+        sourceType: "link",
+        source: ytLink,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isDeleted: false,
+        sourceLineItems: sourceLineItems,      
+      } as Source;
+
       return {
-        text,
+        source: newSource,
         ytDetails,
       };
     }), 
