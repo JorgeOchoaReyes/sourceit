@@ -5,6 +5,7 @@ import { UndoIcon } from "lucide-react";
 import { TextLoading } from "../loading/TextLoading";
 import { FactCheckDrawer } from "../drawer/fact-check-drawer"; 
 import { api } from "~/utils/api"; 
+import { motion } from "framer-motion";
 
 interface LinesSpreadProps {
     setSourceReady: (b: boolean) => void;
@@ -75,8 +76,11 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
               {
                 localSource?.sourceLineItems.map((lineItem, index) => {
                   return (
-                    <div
+                    <motion.div
                       key={lineItem.id} 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
                       className="flex flex-row items-center justify-between w-full py-2 max-w-[100vw] flex-wrap" 
                       onClick={async () => {
                         if(index === chosenParagraph) {
@@ -102,7 +106,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                           {lineItem.sourceText}  
                         </div>
                       </div> 
-                    </div>
+                    </motion.div>
                   );
                 })
               }

@@ -3,21 +3,19 @@
 import { Layout } from "~/components/layout"; 
 import React, { useEffect } from "react"; 
 import { api } from "~/utils/api"; 
-import { SearchView } from "~/components/views/searchVIew";
+import { SearchView } from "~/components/views/SearchView";
 import router from "next/router";
-import { determineTypeOfContent, convertTextToSourceParagraph, convertTranscribeToSourceParagraph } from "~/utils/functions";
+import { determineTypeOfContent, convertTextToSourceParagraph } from "~/utils/functions";
 import { type Source } from "~/types";
 import {v4 as uuid} from "uuid";
 import { useStore } from "~/hooks/use-store";
-import { LinesSpread } from "~/components/views/LineSpread";
-import { Button } from "~/components/ui/button";
+import { LinesSpread } from "~/components/views/LineSpread"; 
 
 export default function Home() { 
   const useRouer = router;
   const {setLocalSource, localSource} = useStore();
   const sourceMutation = api.source.source.useMutation();
-  const textFromImageMutation = api.source.textFromImage.useMutation();
-  const ytTranscribe = api.source.transcribeYt.useMutation(); 
+  const textFromImageMutation = api.source.textFromImage.useMutation(); 
   const [sourceText, setSourceText] = React.useState("");
   const [chosenMethod, setChosenMethod] = React.useState("auto");
   const [loading, setLoading] = React.useState(false);
@@ -30,19 +28,40 @@ export default function Home() {
   const onEnter = async (fileToProcess?: (File | null)) => {
     const type = determineTypeOfContent(sourceText);
     setSourceReady(true);
-    if(type === "text" || type === "file") {
-      await useRouer.replace("?source=custom-text");
+    if(type === "text" || type === "file") { 
       let textToUse = sourceText;
       if(fileToProcess) {
-        const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        const dataUri = await fileToDataUri(fileToProcess);
-        const text = await textFromImageMutation.mutateAsync({dataUri});
-        textToUse = text; 
+        const typeOfFile = fileToProcess.type.split("/")[0]; 
+        if(typeOfFile === "image") {
+          const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const dataUri = await fileToDataUri(fileToProcess);
+          const text = await textFromImageMutation.mutateAsync({dataUri});
+          textToUse = text; 
+        }
+        else if(typeOfFile === "audio") {
+          const formDataAudio = new FormData();
+          formDataAudio.append("audio", fileToProcess); 
+          setLoading((prev) => {
+            prev = true;
+            return prev; 
+          });
+          const fetchFromAudioApi = fetch("/api/audio", {
+            method: "POST",
+            body: formDataAudio, 
+          });
+          const response = await fetchFromAudioApi;
+          const text = await response.json() as {message: string};
+          textToUse = text.message ?? "Unable to transcribe audio";
+          setLoading((prev) => {
+            prev = false;
+            return prev; 
+          }); 
+        } 
       } 
       const sourceId = uuid();
       const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
@@ -59,16 +78,9 @@ export default function Home() {
       setLocalSource(newSource);
     } 
     else if(type === "link") {
-      await useRouer.replace("?source=custom-link");
-      const transcribeResults = await ytTranscribe.mutateAsync({
-        ytLink: sourceText.trim(),
-      });
-      if(transcribeResults === "failed") {
-        alert("Failed to transcribe youtube video");
-        return;
-      }  
-      setLocalSource(transcribeResults.source);
-      return;
+      alert("YT link not supported yet");
+      setSourceReady(false);
+      return; 
     }  
   };
 
@@ -85,7 +97,7 @@ export default function Home() {
         {
           sourceReady ? 
             <LinesSpread 
-              textLoading={loading || textFromImageMutation.isPending || ytTranscribe.isPending}  
+              textLoading={loading || textFromImageMutation.isPending}  
               setSourceReady={setSourceReady}
             />
             :

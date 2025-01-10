@@ -17,7 +17,12 @@ const config = {
     locales: ["en"],
     defaultLocale: "en",
   },
-  transpilePackages: ["geist", "next-auth"] 
+  transpilePackages: ["geist", "next-auth"],  
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "100mb",
+    },
+  },
 };
 
 export default config;
