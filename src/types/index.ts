@@ -25,5 +25,6 @@ export interface SourceParagraph {
 export interface StrucutredOutput {
     validity: string, 
     reason: string, 
-    sources: string[]
+    sources: string[],
+    fallacies?: string,
 }

@@ -31,17 +31,14 @@ export const uploadImageToStorage = async (dataUri: string, imageName: string) =
       projectId: credentials.project_id,
       credentials: credentials,
     }
-  ); 
-  console.log("Accessing storage  . . . . . "); 
+  );  
   const matches = /^data:([A-Za-z-+\/]+);base64,(.+)$/.exec(dataUri); 
   try { 
     const fileContents = Buffer.from(matches?.[2] ?? "", "base64");
-    const bucket = gcp_storage.bucket(gcpPathImage);
-
+    const bucket = gcp_storage.bucket(gcpPathImage); 
     const expirationDate = new Date();
     const daysTillExpiration = 1;
-    expirationDate.setDate(expirationDate?.getDate() + daysTillExpiration); 
-
+    expirationDate.setDate(expirationDate?.getDate() + daysTillExpiration);  
     const file = bucket.file(imageName);
     await file.save(fileContents, {
       metadata: {
@@ -57,13 +54,11 @@ export const uploadImageToStorage = async (dataUri: string, imageName: string) =
         expires: expirationDate.toISOString(),
         "Custom-Time": expirationDate.toISOString(),
       },
-    });
-    console.log("Successfully uploaded image to storage . . . . . ");
+    }); 
     const pathOfImage = `gs://${gcpPathImage}/${imageName}`;
     return pathOfImage;
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    console.log("Failed", (error as {stack: any}).stack);
+  } catch (error) { 
+    console.log("Failed", (error));
   }
 };
 
@@ -168,7 +163,7 @@ export const transcribeAudio = async (path: string) => {
 };
 
 export const factCheckerParagraphv1 = async (raw: string, model?: string) => { 
-  try {
+  try { 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
@@ -176,21 +171,21 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
           role: "system",
           content:
             "You are a fact-checking assistant. Respond to queries in this structured JSON format: " +
-            "{\"validity\": \"true/false/unknown\", \"reason\": \"reasoning text\", \"sources\": [\"source1\", \"source2\"]}." +
-            "For example, {\"validity\": \"true\", \"reason\": \"The statement is true because...\", \"sources\": [\"source1\", \"source2\"]}" + 
-            "If you are unable to fact-check the statement, please respond with {\"validity\": \"unavailble\", \"reason\": \"unavailble\", \"sources\": [\"unavailble\"]}" +
-            "Ensure that the sources are valid URLs.",
+            "{\"validity\": \"true/false/unknown\", \"fallacies\": \"reasoning text\", \"reason\": \"reasoning text\", \"sources\": [\"source1\", \"source2\"]}." +
+            "For example, {\"validity\": \"true\", \"fallacies\": \"The speaker use the following fallacies because...\", \"reason\": \"The statement is true because...\", \"sources\": [\"source1\", \"source2\"]}" + 
+            "If you are unable to fact-check the statement, please respond with {\"validity\": \"unavailble\", \"fallacies\": \"\", \"reason\": \"reason for not being able to fact-check\", \"sources\": []}" +
+            "Ensure that the sources are valid URLs." + 
+            "Do the best you can to provide accurate information and understand what the user is saying.",
         },
         { role: "user", content: `Fact-check this statement: "${raw}"` },
       ], 
     });
-    const result = response.choices[0]?.message.content; 
-    console.log(result);
+    const result = response.choices[0]?.message.content;  
+    console.log("Fact check result", JSON.stringify(response));
     if(result && result.trim() !== "") {
       const asObejct = JSON.parse(result) as StrucutredOutput; 
       return asObejct;
-    } else {
-      console.log("[Server] Failed to fact check the statement");
+    } else { 
       throw new Error("Failed to fact check the statement");
     }
   } catch (error) {
