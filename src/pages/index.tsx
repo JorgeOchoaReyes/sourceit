@@ -42,21 +42,21 @@ export default function Home() {
         });
         const dataUri = await fileToDataUri(fileToProcess);
         const text = await textFromImageMutation.mutateAsync({dataUri});
-        textToUse = text;
-        const sourceId = uuid();
-        const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
-        const newSource = {
-          id: sourceId,  
-          title: "Custom Source",
-          sourceType: type,
-          source: textToUse,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isDeleted: false,
-          sourceLineItems: sourceLineItems,      
-        } as Source;
-        setLocalSource(newSource);
+        textToUse = text; 
       } 
+      const sourceId = uuid();
+      const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
+      const newSource = {
+        id: sourceId,  
+        title: "Custom Source",
+        sourceType: type,
+        source: textToUse,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isDeleted: false,
+        sourceLineItems: sourceLineItems,      
+      } as Source;
+      setLocalSource(newSource);
     } 
     else if(type === "link") {
       await useRouer.replace("?source=custom-link");

@@ -21,7 +21,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
 
   const sourceMutation = api.source.source.useMutation();
 
-  const onClickBeginFactCheck = async (paragraph: number) => {
+  const onClickBeginFactCheck = async (paragraph: number, retry?: boolean) => {
     const foundParagraph = localSource?.sourceLineItems[paragraph];  
     if(!foundParagraph) {
       alert("No Paragraph found!");
@@ -30,7 +30,8 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
     if(
       foundParagraph?.factCheck?.validity !== "unknown" && 
       foundParagraph?.factCheck.reason  !== "unknown" && 
-      foundParagraph?.factCheck.sources[0] !== "unknown"
+      foundParagraph?.factCheck.sources[0] !== "unknown" &&
+      !retry
     ) { 
       return;
     } 
@@ -97,7 +98,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-900 text-white text-xs">
                           {index + 1}
                         </div>
-                        <div className="text-md text-white flex flex-wrap">
+                        <div className="text-md text-white flex flex-wrap w-full">
                           {lineItem.sourceText}  
                         </div>
                       </div> 
@@ -113,6 +114,9 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
         onClose={() => setFactCheckDrawerOpen(false)}
         sourceParagraph={localSource?.sourceLineItems[chosenParagraph] ?? null}
         loading={sourceMutation.isPending}
+        refactCheck={async () => {
+          await onClickBeginFactCheck(chosenParagraph, true);
+        }}
       />
     </div>
   );

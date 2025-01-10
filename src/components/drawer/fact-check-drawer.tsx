@@ -8,7 +8,7 @@ import {
 import { Button } from "../ui/button";
 import { type SourceParagraph } from "~/types";
 import { TextLoading } from "../loading/TextLoading";
-import {CheckCheckIcon, XCircleIcon, } from "lucide-react";
+import {CheckCheckIcon, XCircleIcon, OctagonMinusIcon } from "lucide-react";
 import { AITag } from "../tags/AITag";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
 
@@ -17,6 +17,7 @@ interface FactCheckDrawerProps {
   onClose: () => void;
   sourceParagraph: SourceParagraph | null;
   loading: boolean;
+  refactCheck: () => Promise<void>;
 }
 
 export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
@@ -24,6 +25,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
   onClose,
   sourceParagraph,
   loading,
+  refactCheck
 }) => { 
   return (
     <Drawer open={open} onClose={onClose}  >
@@ -36,7 +38,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
           <div className="flex flex-row items-center justify-start mb-5">  
             <AITag />  
           </div>
-          <div className="flex flex-row items-center justify-center">
+          <div className="flex flex-col-reverse items-center justify-center">
             <Select value="ChatGpt (GPT-4)" >
               <SelectTrigger className="w-[180px] text-black">
                 <SelectValue placeholder="Select Model" />
@@ -48,6 +50,11 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                 </SelectGroup>
               </SelectContent>
             </Select>
+            <div> 
+              <Button onClick={async () => { 
+                await refactCheck();
+              }} > Re-Fact Check </Button>
+            </div>
           </div>
         </div>
         {
@@ -69,7 +76,8 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                           <div
                             className="flex flex-row items-center justify-center ml-5"
                             style={{ 
-                              backgroundColor: sourceParagraph.factCheck.validity === "true" ? "#00FF00" : "#ff0000",
+                              backgroundColor: sourceParagraph.factCheck.validity === "true" ? "#00FF00" :
+                                sourceParagraph.factCheck.validity === "unknown" ? "#f1a637" : "#ff0000",
                               borderRadius: "8px",
                               width: "fit-content",
                               color: sourceParagraph.factCheck.validity === "true" ? "black" : "white",
@@ -77,11 +85,16 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                               padding: 6
                             }}
                           >{
-                              sourceParagraph.factCheck.validity === "true" ? <CheckCheckIcon /> : <XCircleIcon className="mr-1" />
-                            }{sourceParagraph.factCheck.validity === "true" ? "True" : "False"}</div>
+                              sourceParagraph.factCheck.validity === "true" ? <CheckCheckIcon /> :
+                                sourceParagraph.factCheck.validity === "unknown" ? <OctagonMinusIcon className="mr-1"  /> 
+                                  : <XCircleIcon className="mr-1" /> 
+                            }{sourceParagraph.factCheck.validity === "true" ? "True" : sourceParagraph.factCheck.validity === "unknown" ? "Unknown" : "False"}</div>
                         </div>
                         <p className="text-lg p-2 "> 
                           •  <u> Explanation</u>: {sourceParagraph.factCheck.reason} 
+                        </p>
+                        <p className="text-lg p-2 "> 
+                          •  <u> Fallacies</u>: {sourceParagraph.factCheck.fallacies} 
                         </p>
                         <div className="flex flex-col items-start justify-start p-4">
                           <p className="text-lg font-bold"> 
