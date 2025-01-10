@@ -3,9 +3,10 @@ import {Storage} from "@google-cloud/storage";
 import OpenAI from "openai";   
 import { pipeline } from "stream/promises";
 import { type Readable } from "stream";
-import { type StrucutredOutput } from "~/types";
+import { type SourceParagraph, type StrucutredOutput } from "~/types";
 import vision from "@google-cloud/vision"; 
 import { v1p1beta1 } from "@google-cloud/speech";  
+import { v4 as uuid } from "uuid";
 
 const { SpeechClient } = v1p1beta1;
 
@@ -130,25 +131,22 @@ export const uploadYtToBucket = async (readable: Readable, fileName: string) => 
   const gcp_storage = new Storage({
     projectId: credentials.project_id,
     credentials: credentials,
-  });  
-  console.log("Accessing storage  . . . . . ");
+  });   
   const bucket = gcp_storage.bucket(gcpPathAudio);
   const file = bucket.file(fileName);
   const writeStream = file.createWriteStream();
-  await pipeline(readable, writeStream);
-  console.log("Successfully uploaded audio to storage . . . . . ");
+  await pipeline(readable, writeStream); 
   return `gs://${gcpPathAudio}/${fileName}`;
 }; 
  
-export const transcribeAudio = async (path: string) => { 
-  console.log("Transcribing audio . . . . . ");
-  const credentials = getGcpClientCredentials();
+export const transcribeAudio = async (path: string) => {  
   try {
+    const credentials = getGcpClientCredentials();
     const client = new SpeechClient({
       projectId: credentials.project_id,
       credentials: credentials,
-    }); 
-    const response = await client.recognize({
+    });  
+    const responseLong = await client.longRunningRecognize({
       audio: { uri: path },
       config: {
         encoding: "MP3",
@@ -156,72 +154,13 @@ export const transcribeAudio = async (path: string) => {
         languageCode: "en-US",
         enableSpeakerDiarization: true,
       },
-    });
+    }); 
+    const response = await responseLong[0].promise(); 
     if(response[0]?.results?.length === 0) {
       throw new Error("Failed to transcribe audio");
-    }
-    const transcription = [] as {
-      text: string,
-      speakerTag: number,
-      time: string,
-    }[];
-    const data = response[0].results; 
-    const lastElement = data?.[data?.length - 1];  
-    const alternative = lastElement?.alternatives;
-    alternative?.forEach((alt) => { 
-      const words = alt.words;
-      const breakdown = {} as Record<string, Record<string, string>>;
-      words?.forEach((word,) => { 
-        const speakerWord = word.word ?? "";
-        const speakerTag = word.speakerTag?.toString() ?? "0";
-        const time = word.startTime?.seconds?.toString() ?? ""; 
-        if (breakdown[time]) {
-          if(breakdown[time][speakerTag]) {
-            const current = breakdown[time][speakerTag];
-            breakdown[time] = { 
-              ...breakdown[time],
-              [speakerTag]: current + " " + speakerWord,
-            };
-          } else { 
-            breakdown[time] = { 
-              ...breakdown[time],
-              [speakerTag]: speakerWord,
-            };
-          }
-        } else { 
-          breakdown[time] = { 
-            [speakerTag]: speakerWord,
-          };
-        }
-      }); 
-      Object.keys(breakdown).sort().forEach((time) => { 
-        const speakers = breakdown[time];
-        Object.keys(speakers ?? {}).forEach((speaker) => { 
-          const prevTranscription = transcription?.[transcription?.length - 1] ?? null;
-          const prevSpeaker = prevTranscription?.speakerTag ?? 0; 
-          const currentspeaker = parseInt(speaker);
-          if (prevSpeaker === currentspeaker) {
-            const prevText = prevTranscription?.text ?? "";
-            const currentText = speakers?.[speaker] ?? "";
-            const newText = prevText + " " + currentText;
-            transcription[transcription?.length - 1] = {
-              text: newText,
-              speakerTag: currentspeaker,
-              time: time,
-            };
-          } else {
-            transcription.push({
-              text: speakers?.[speaker] ?? "",
-              speakerTag: currentspeaker,
-              time: time,
-            });
-          }
-        });
-      });
-    });  
-    return transcription.sort((a, b) => {
-      return parseInt(a.time) - parseInt(b.time);
-    }); 
+    } 
+    const transcriptionFull = response[0]?.results?.map(result => result?.alternatives?.[0]?.transcript)?.join("\n"); 
+    return transcriptionFull;
   } catch (error) {
     console.log("error", error);
     throw new Error("Failed to transcribe audio");
@@ -258,4 +197,24 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
     console.log(error);
     throw new Error("Failed to reach Open AI");
   } 
+};
+
+export const convertTextToSourceParagraph = (text: string, sourceId: string) => {
+  const paragraphs = text.split("\n").filter((p) => p.length > 0);
+  return paragraphs.map((p, i) => {
+    return {
+      id: uuid(),
+      sourceText: p,
+      sourceId: sourceId,
+      generatedBy: "chatgt",
+      factCheck: {
+        validity: "unknown",
+        reason: "unknown",
+        sources: [],
+      },
+      upvote: 0,
+      downvote: 0,
+      indexInContext: i,
+    } as SourceParagraph;
+  });
 };
