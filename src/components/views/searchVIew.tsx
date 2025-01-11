@@ -1,22 +1,22 @@
 import React from "react"; 
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { ImageIcon, LightbulbIcon, TextIcon, YoutubeIcon } from "lucide-react";
+import { ImageIcon, LightbulbIcon, TextIcon, } from "lucide-react";
 import Link from "next/link";
 import { AnimatedLoading } from "../loading/AnimatedLoading";
 import { Input } from "../ui/input";
 
 interface SearchViewProps {
-    sourceMutation: {isPending: boolean};
-    sourceText: string;
-    setSourceText: (s: string) => void;
-    chosenMethod: string;
-    setChosenMethod: (s: string) => void;
-    loading: boolean;
-    setLoading: (b: boolean) => void;
-    onClickMehod: (type: string) => void;
-    onEnter: () => Promise<void>; 
-    setFile: (f: File | null) => void;
+  sourceMutation: {isPending: boolean};
+  sourceText: string;
+  setSourceText: (s: string) => void;
+  chosenMethod: string;
+  setChosenMethod: (s: string) => void;
+  loading: boolean;
+  setLoading: (b: boolean) => void;
+  onClickMehod: (type: string) => void;
+  onEnter: () => Promise<void>; 
+  setFile: (f: File | null) => void;
 }
 
 export const SearchView: React.FC<SearchViewProps> = ({
@@ -64,7 +64,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   <Input 
                     type="file" 
                     className="cursor-pointer mt-1" 
-                    accept=".png,.jpg,.jpeg"  
+                    accept=".png,.jpg,.jpeg,.mp3"  
                     onChange={async (e) => {
                       setFile(e.target.files?.[0] ?? null);
                     }}
@@ -76,10 +76,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" className={`${chosenMethod === "auto" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("auto")}>
                 <span className="mr-2"><LightbulbIcon color="#f2c606" /> </span> auto
-              </Button>
-              <Button variant="ghost" size="sm" className={`${chosenMethod === "youtube" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("youtube")}>
-                <span className="mr-2"><YoutubeIcon color="red" /> </span> youtube
-              </Button>
+              </Button> 
               <Button variant="ghost" size="sm" className={`${chosenMethod === "audio" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("audio")}>
                 <span className="mr-2">🎵</span> audio
               </Button>             

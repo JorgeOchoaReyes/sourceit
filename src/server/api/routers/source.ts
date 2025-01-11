@@ -3,16 +3,9 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { 
   factCheckerParagraphv1, 
   uploadImageToStorage, 
-  extractTextFromImage, 
-  verifyYoutubeUrl, 
-  getYoutubeAudio, 
-  uploadYtToBucket, 
-  getYoutubeDetails,
-  transcribeAudio,
-  convertTextToSourceParagraph
+  extractTextFromImage,  
 } from "~/server/functions"; 
-import { v4 as uuid } from "uuid";
-import { type Source } from "~/types";
+import { v4 as uuid } from "uuid"; 
 
 export const sourceRouter = createTRPCRouter({
   source: publicProcedure
@@ -53,40 +46,5 @@ export const sourceRouter = createTRPCRouter({
         console.log(error);
         return "failed";
       }
-    }),
-  transcribeYt: publicProcedure
-    .input(z.object({ ytLink: z.string() }))
-    .mutation(async ({ input, ctx }) => { 
-      const db = ctx.db; 
-      const ytLink = input.ytLink;
-      const verifyYoutubeUrlResult = verifyYoutubeUrl(ytLink);
-      if (!verifyYoutubeUrlResult) {
-        return "failed";
-      } 
-      const getYoutubeAudioResult = await getYoutubeAudio(ytLink); 
-      if (!getYoutubeAudioResult) {
-        return "failed";
-      }
-      const ytDetails = await getYoutubeDetails(ytLink);
-      const pathToBucket = await uploadYtToBucket(getYoutubeAudioResult, `${ytDetails.id}.mp3`,); 
-      const text = await transcribeAudio(pathToBucket);  
-
-      const sourceId = uuid(); 
-      const sourceLineItems = convertTextToSourceParagraph(text ?? "", sourceId);
-      const newSource = {
-        id: sourceId,  
-        title: ytDetails.title,
-        sourceType: "link",
-        source: ytLink,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isDeleted: false,
-        sourceLineItems: sourceLineItems,      
-      } as Source;
-
-      return {
-        source: newSource,
-        ytDetails,
-      };
-    }), 
+    }),  
 });

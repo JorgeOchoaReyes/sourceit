@@ -2,11 +2,12 @@ import youtubeStream from "yt-stream";
 import {Storage} from "@google-cloud/storage"; 
 import OpenAI from "openai";   
 import { pipeline } from "stream/promises";
-import { type Readable } from "stream";
+import { Readable } from "stream";
 import { type SourceParagraph, type StrucutredOutput } from "~/types";
 import vision from "@google-cloud/vision"; 
 import { v1p1beta1 } from "@google-cloud/speech";  
 import { v4 as uuid } from "uuid";
+import type formidable from "formidable";
 
 const { SpeechClient } = v1p1beta1;
 
@@ -79,60 +80,19 @@ export const extractTextFromImage = async (imagePath: string) => {
   return extractedText;
 };
 
-export const verifyYoutubeUrl = (url: string): boolean => {
-  let isValid = true; 
-  const verifyUrl = youtubeStream.validateURL(url);
-  if (!verifyUrl) {
-    isValid = false;
-  }
-  const verifyVideo = youtubeStream.validateVideoURL(url);
-  if (!verifyVideo) {
-    isValid = false;
-  }
-  return isValid;
-};
-
-export const getYoutubeDetails = async (url: string): Promise<{ id:string, title: string }> => {
-  youtubeStream.setApiKey(process.env.YOUTUBE_API_KEY ?? ""); 
-  youtubeStream.setPreference("api");  
-  const name = await youtubeStream.getInfo(url);
-  return{
-    id: name.id,
-    title: name.title,
-  };
-};
-
-export const getYoutubeAudio = async (url: string, quality="low"): Promise<Readable> => { 
-  try {
-    youtubeStream.setApiKey(process.env.YOUTUBE_API_KEY ?? ""); 
-    youtubeStream.setPreference("api"); 
-    const info = await youtubeStream.getInfo(url); 
-    console.log(`Video title: ${info.title} - ${info.id}`); 
-    const audioStream = await youtubeStream.stream(url, {
-      quality: quality as youtubeStream.quality,
-      type: "audio",
-      highWaterMark: 1024 * 1024 * 10,
-      download: true,
-    }); 
-    return audioStream.stream;
-  } catch (error) {
-    console.log(error); 
-    throw new Error("Failed to upload audio to storage");
-  }
-}; 
-
-export const uploadYtToBucket = async (readable: Readable, fileName: string) => {
+export const uploadAudioToStorage = async (audioFile: Buffer, fileName: string) => {
   const credentials = getGcpClientCredentials();
   const gcp_storage = new Storage({
     projectId: credentials.project_id,
     credentials: credentials,
-  });   
+  }); 
   const bucket = gcp_storage.bucket(gcpPathAudio);
   const file = bucket.file(fileName);
-  const writeStream = file.createWriteStream();
-  await pipeline(readable, writeStream); 
+  const writeStream = file.createWriteStream(); 
+  const readableAudio = Readable.from(audioFile);
+  await pipeline(readableAudio, writeStream); 
   return `gs://${gcpPathAudio}/${fileName}`;
-}; 
+};
  
 export const transcribeAudio = async (path: string) => {  
   try {
@@ -180,8 +140,7 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
         { role: "user", content: `Fact-check this statement: "${raw}"` },
       ], 
     });
-    const result = response.choices[0]?.message.content;  
-    console.log("Fact check result", JSON.stringify(response));
+    const result = response.choices[0]?.message.content;   
     if(result && result.trim() !== "") {
       const asObejct = JSON.parse(result) as StrucutredOutput; 
       return asObejct;
@@ -212,4 +171,57 @@ export const convertTextToSourceParagraph = (text: string, sourceId: string) => 
       indexInContext: i,
     } as SourceParagraph;
   });
+};
+
+// Deprecated functions, until we can find a better way to get past "Sign in to confirm you’re not a bot"
+export const verifyYoutubeUrl = (url: string): boolean => {
+  let isValid = true; 
+  const verifyUrl = youtubeStream.validateURL(url);
+  if (!verifyUrl) {
+    isValid = false;
+  }
+  const verifyVideo = youtubeStream.validateVideoURL(url);
+  if (!verifyVideo) {
+    isValid = false;
+  }
+  return isValid;
+}; 
+export const getYoutubeDetails = async (url: string): Promise<{ id:string, title: string }> => {
+  youtubeStream.setApiKey(process.env.YOUTUBE_API_KEY ?? ""); 
+  youtubeStream.setPreference("api");  
+  const name = await youtubeStream.getInfo(url);
+  return{
+    id: name.id,
+    title: name.title,
+  };
+}; 
+export const getYoutubeAudio = async (url: string, quality="low"): Promise<Readable> => { 
+  try {
+    youtubeStream.setApiKey(process.env.YOUTUBE_API_KEY ?? ""); 
+    youtubeStream.setPreference("api"); 
+    const info = await youtubeStream.getInfo(url); 
+    console.log(`Video title: ${info.title} - ${info.id}`); 
+    const audioStream = await youtubeStream.stream(url, {
+      quality: quality as youtubeStream.quality,
+      type: "audio",
+      highWaterMark: 1024 * 1024 * 10,
+      download: true,
+    }); 
+    return audioStream.stream;
+  } catch (error) {
+    console.log(error); 
+    throw new Error("Failed to upload audio to storage");
+  }
+};  
+export const uploadYtToBucket = async (readable: Readable, fileName: string) => {
+  const credentials = getGcpClientCredentials();
+  const gcp_storage = new Storage({
+    projectId: credentials.project_id,
+    credentials: credentials,
+  });   
+  const bucket = gcp_storage.bucket(gcpPathAudio);
+  const file = bucket.file(fileName);
+  const writeStream = file.createWriteStream();
+  await pipeline(readable, writeStream); 
+  return `gs://${gcpPathAudio}/${fileName}`;
 };

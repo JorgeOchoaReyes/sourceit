@@ -11,6 +11,7 @@ import { TextLoading } from "../loading/TextLoading";
 import {CheckCheckIcon, XCircleIcon, OctagonMinusIcon } from "lucide-react";
 import { AITag } from "../tags/AITag";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
+import { motion } from "framer-motion";
 
 interface FactCheckDrawerProps {
   open: boolean;
@@ -65,7 +66,12 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                   !sourceParagraph ? 
                     <p> Noe Info . . . . </p>
                     :
-                    <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="flex flex-col items-start justify-start p-4 w-full max-w-[100vw]"
+                    >
                       <p className="text-sm italic p-2 w-10/12">  
                         <q>{sourceParagraph.sourceText}</q>
                       </p>
@@ -111,7 +117,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                           </div>
                         </div>
                       </div>
-                    </> 
+                    </motion.div> 
                 }
               </div>
             </div> 
