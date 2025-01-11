@@ -3,7 +3,7 @@
 import { Layout } from "~/components/layout"; 
 import React, { useEffect } from "react"; 
 import { api } from "~/utils/api"; 
-import { SearchView } from "../components/views/SearchView";
+import { SearchView } from "~/components/views/searchVIew";
 import router from "next/router";
 import { determineTypeOfContent, convertTextToSourceParagraph } from "~/utils/functions";
 import { type Source } from "~/types";
