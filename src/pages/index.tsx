@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @next/next/no-img-element */
 import { Layout } from "~/components/layout"; 
@@ -16,6 +17,7 @@ export default function Home() {
   const {setLocalSource, localSource} = useStore();
   const sourceMutation = api.source.source.useMutation();
   const textFromImageMutation = api.source.textFromImage.useMutation(); 
+  const textFromPdf = api.source.textFromPdf.useMutation();
   const [sourceText, setSourceText] = React.useState("");
   const [chosenMethod, setChosenMethod] = React.useState("auto");
   const [loading, setLoading] = React.useState(false);
@@ -32,6 +34,7 @@ export default function Home() {
       let textToUse = sourceText;
       if(fileToProcess) {
         const typeOfFile = fileToProcess.type.split("/")[0]; 
+        alert(typeOfFile);
         if(typeOfFile === "image") {
           const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -55,13 +58,49 @@ export default function Home() {
             body: formDataAudio, 
           });
           const response = await fetchFromAudioApi;
-          const text = await response.json() as {message: string};
+          const text = await response.json() as {message: string, error: string};
+          if(text.error !== "") {
+            alert("Unable to transcribe audio");
+            setLoading((prev) => {
+              prev = false;
+              return prev;
+            });
+            setSourceReady(false);
+            return;
+          }
           textToUse = text.message ?? "Unable to transcribe audio";
           setLoading((prev) => {
             prev = false;
             return prev; 
           }); 
         } 
+        else if(typeOfFile === "video") {
+          alert("Video not supported yet");
+          setSourceReady(false);
+          return; 
+        }
+        else if(typeOfFile === "text") {
+          const text = await new Promise<string>((resolve) => {
+            const reader = new FileReader(); 
+            reader.onload = (e) => {
+              const text = e.target?.result as string; 
+              resolve(text);
+            };
+            reader.readAsText(fileToProcess); 
+          });
+          textToUse = text;
+        }
+        else if(typeOfFile === "application") {  
+          const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          }); 
+          const dataUri = await fileToDataUri(fileToProcess);
+          const extractedText = await textFromPdf.mutateAsync({dataUri});
+          textToUse = extractedText;
+        }
       } 
       const sourceId = uuid();
       const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
@@ -97,7 +136,7 @@ export default function Home() {
         {
           sourceReady ? 
             <LinesSpread 
-              textLoading={loading || textFromImageMutation.isPending}  
+              textLoading={loading || textFromImageMutation.isPending || textFromPdf.isPending}  
               setSourceReady={setSourceReady}
             />
             :
