@@ -8,7 +8,7 @@ import fs from "fs/promises";
 
 type ResponseData = {
   message: string,
-  error?: string
+  error: string
 } 
  
 export default async function POST(
@@ -27,11 +27,11 @@ export default async function POST(
     const buffer = await fs.readFile(path); 
     const pathToAudio = await uploadAudioToStorage(buffer, `${uuid()}.mp3`);
     const text = await transcribeAudio(pathToAudio); 
-    res.status(200).json({ message: (text ?? "")});  
+    res.status(200).json({ message: (text ?? ""), error: "" });  
     return;
   } catch (error) {
     console.log(error); 
-    res.status(400).json({ message: "Error" });
+    res.status(400).json({ error: "Error", message: "Unable to transcribe audio" });
     return;
   }
 }

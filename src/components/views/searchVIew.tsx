@@ -64,7 +64,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   <Input 
                     type="file" 
                     className="cursor-pointer mt-1" 
-                    accept=".png,.jpg,.jpeg,.mp3"  
+                    accept=".png,.jpg,.jpeg,.mp3,.pdf,.txt"  
                     onChange={async (e) => {
                       setFile(e.target.files?.[0] ?? null);
                     }}

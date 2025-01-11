@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc"; 
 import { 
@@ -6,6 +10,7 @@ import {
   extractTextFromImage,  
 } from "~/server/functions"; 
 import { v4 as uuid } from "uuid"; 
+import pdf from "pdf-parse";
 
 export const sourceRouter = createTRPCRouter({
   source: publicProcedure
@@ -47,4 +52,19 @@ export const sourceRouter = createTRPCRouter({
         return "failed";
       }
     }),  
+  textFromPdf: publicProcedure
+    .input(z.object({ dataUri: z.string() }))
+    .mutation(async ({ input }) => { 
+      try { 
+        const attachmentContent = input.dataUri;
+        const base64String = attachmentContent.split(",")[1];
+        const asBuffer = Buffer.from(base64String ?? "", "base64");  
+        const pdfData = await pdf(asBuffer);
+        const text = pdfData.text; 
+        return text;
+      } catch (error) {
+        console.log(error);
+        return "failed";
+      }
+    }),
 });
