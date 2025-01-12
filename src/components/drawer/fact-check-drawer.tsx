@@ -41,7 +41,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
           </div>
           <div className="flex flex-col-reverse items-center justify-center">
             <Select value="ChatGpt (GPT-4)" >
-              <SelectTrigger className="w-[180px] text-black">
+              <SelectTrigger className="md:w-full xs:w-36 xs:text-xs  text-black">
                 <SelectValue placeholder="Select Model" />
               </SelectTrigger>
               <SelectContent>
@@ -52,19 +52,20 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
               </SelectContent>
             </Select>
             <div> 
-              <Button onClick={async () => { 
-                await refactCheck();
-              }} > Re-Fact Check </Button>
+              <Button
+                onClick={async () => { 
+                  await refactCheck();
+                }} > Re-Fact Check </Button>
             </div>
           </div>
         </div>
         {
           loading ? <TextLoading size="sm" /> : <>
-            <div className="w-full flex flex-col items-center justify-center p-2">
+            <div className="w-full flex flex-col md:items-center md:justify-center xs:overflow-scroll xs:max-h-64">
               <div className="flex flex-col">
                 {
                   !sourceParagraph ? 
-                    <p> Noe Info . . . . </p>
+                    <p> No Info . . . . </p>
                     :
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -72,12 +73,12 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                       transition={{ duration: 0.5 }}
                       className="flex flex-col items-start justify-start p-4 w-full max-w-[100vw]"
                     >
-                      <p className="text-sm italic p-2 w-10/12">  
+                      <p className="md:text-sm xs:text-xs italic md:p-2 sx:m-1 xs:w-full md:w-10/12">  
                         <q>{sourceParagraph.sourceText}</q>
                       </p>
                       <hr className="w-12/12 my-4" />  
                       <div className="w-10/12">
-                        <div className="text-lg p-2 flex flex-row items-center " > 
+                        <div className="md:text-lg xs:text-xs p-2 flex flex-row items-center " > 
                           • <u>  Validity </u>: 
                           <div
                             className="flex flex-row items-center justify-center ml-5"
@@ -96,21 +97,21 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                                   : <XCircleIcon className="mr-1" /> 
                             }{sourceParagraph.factCheck.validity === "true" ? "True" : sourceParagraph.factCheck.validity === "unknown" ? "Unknown" : "False"}</div>
                         </div>
-                        <p className="text-lg p-2 "> 
+                        <p className="md:text-lg xs:text-xs p-2 "> 
                           •  <u> Explanation</u>: {sourceParagraph.factCheck.reason} 
                         </p>
-                        <p className="text-lg p-2 "> 
+                        <p className="md:text-lg xs:text-xs p-2 "> 
                           •  <u> Fallacies</u>: {sourceParagraph.factCheck.fallacies} 
                         </p>
-                        <div className="flex flex-col items-start justify-start p-4">
-                          <p className="text-lg font-bold"> 
+                        <div className="flex flex-col items-start justify-start p-2">
+                          <p className="md:text-lg xs:text-xs font-bold"> 
                           • <u>  Sources</u>
                           </p>
-                          <div className="flex flex-col items-start justify-start">
+                          <div className="flex flex-col items-start justify-start flex-wrap xs:w-full">
                             {
                               sourceParagraph.factCheck.sources.map((source, index) => (
-                                <Button variant={"link"} className="ml-4 text-whtie" key={index} > 
-                             • <a href={source} rel="noopener noreferrer" target="Pblank"> {source} </a>
+                                <Button variant={"link"} className="md:ml-4 xs:ml-1 text-white text-wrap xs:text-xs text-start xs:my-5" key={index} > 
+                                • <a href={source} rel="noopener noreferrer" target="_blank"> {source} </a>
                                 </Button>
                               ))
                             }
@@ -122,12 +123,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
               </div>
             </div> 
           </>
-        }
-        <DrawerFooter> 
-          <DrawerClose>
-            <Button >Close</Button>
-          </DrawerClose>
-        </DrawerFooter>
+        } 
       </DrawerContent>
     </Drawer>
   );

@@ -33,8 +33,7 @@ export default function Home() {
     if(type === "text" || type === "file") { 
       let textToUse = sourceText;
       if(fileToProcess) {
-        const typeOfFile = fileToProcess.type.split("/")[0]; 
-        alert(typeOfFile);
+        const typeOfFile = fileToProcess.type.split("/")[0];  
         if(typeOfFile === "image") {
           const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -106,7 +105,7 @@ export default function Home() {
       const sourceLineItems = convertTextToSourceParagraph(textToUse, sourceId);
       const newSource = {
         id: sourceId,  
-        title: "Custom Source",
+        title: "Source.it",
         sourceType: type,
         source: textToUse,
         createdAt: new Date().toISOString(),

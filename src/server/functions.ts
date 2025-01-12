@@ -134,7 +134,7 @@ export const factCheckerParagraphv1 = async (raw: string, model?: string) => {
             "{\"validity\": \"true/false/unknown\", \"fallacies\": \"reasoning text\", \"reason\": \"reasoning text\", \"sources\": [\"source1\", \"source2\"]}." +
             "For example, {\"validity\": \"true\", \"fallacies\": \"The speaker use the following fallacies because...\", \"reason\": \"The statement is true because...\", \"sources\": [\"source1\", \"source2\"]}" + 
             "If you are unable to fact-check the statement, please respond with {\"validity\": \"unavailble\", \"fallacies\": \"\", \"reason\": \"reason for not being able to fact-check\", \"sources\": []}" +
-            "Ensure that the sources are valid URLs." + 
+            "Ensure that the sources are valid URLs and the sources are valid as well, do not provide links that are invalid." + 
             "Do the best you can to provide accurate information and understand what the user is saying.",
         },
         { role: "user", content: `Fact-check this statement: "${raw}"` },

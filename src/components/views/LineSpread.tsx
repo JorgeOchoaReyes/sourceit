@@ -22,7 +22,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
 
   const sourceMutation = api.source.source.useMutation();
 
-  const onClickBeginFactCheck = async (paragraph: number, retry?: boolean) => {
+  const onClickFactCheck = async (paragraph: number, retry?: boolean) => {
     const foundParagraph = localSource?.sourceLineItems[paragraph];  
     if(!foundParagraph) {
       alert("No Paragraph found!");
@@ -51,7 +51,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-start justify-start h-full mt-10 w-full p-4"> 
+    <div className="flex flex-col items-start justify-start h-full mt-10 w-full md:p-4"> 
       {
         textLoading ? 
           <TextLoading />  
@@ -72,7 +72,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                 <UndoIcon color="blue" size={64} /> Reset
               </Button>
             </div>
-            <div className="flex flex-col items-start justify-center p-4 w-full max-w-[100vw]">
+            <div className="flex flex-col items-start justify-center md:p-4 w-full max-w-[100vw]">
               {
                 localSource?.sourceLineItems.map((lineItem, index) => {
                   return (
@@ -90,11 +90,11 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                         }
                         setChosenParagraph(index);
                         setFactCheckDrawerOpen(true);
-                        await onClickBeginFactCheck(index);
+                        await onClickFactCheck(index);
                       }} 
                     >
                       <div
-                        className="flex flex-row items-center gap-2 w-9/12 hover:bg-slate-600 p-4 rounded-lg cursor-pointer transition-all transform"
+                        className="flex flex-row items-center gap-2 xs:w-full md:w-9/12 hover:bg-slate-600 md:p-4 xs:p-2 rounded-lg cursor-pointer transition-all transform"
                         style={{
                           backgroundColor: index === chosenParagraph ? "#2d3748" : ""
                         }}
@@ -102,7 +102,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-900 text-white text-xs">
                           {index + 1}
                         </div>
-                        <div className="text-md text-white flex flex-wrap w-full">
+                        <div className="xs:text-xs md:text-md text-white flex flex-wrap w-full">
                           {lineItem.sourceText}  
                         </div>
                       </div> 
@@ -119,7 +119,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
         sourceParagraph={localSource?.sourceLineItems[chosenParagraph] ?? null}
         loading={sourceMutation.isPending}
         refactCheck={async () => {
-          await onClickBeginFactCheck(chosenParagraph, true);
+          await onClickFactCheck(chosenParagraph, true);
         }}
       />
     </div>
