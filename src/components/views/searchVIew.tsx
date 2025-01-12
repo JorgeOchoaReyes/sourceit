@@ -32,7 +32,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
  
   return (
     <>
-      <div className="flex flex-col items-center gap-8 xs:w-full md:w-[500px] p-4">
+      <div className="flex flex-col items-center gap-8 xs:w-full md:w-[600px] p-4">
         <div className="w-24 h-24 relative">
           <img
             src="/sourceit_white.webp"
@@ -52,7 +52,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   { 
                     (chosenMethod === "auto" || chosenMethod === "text") ?
                       <Textarea
-                        placeholder="paste text here. . . ."
+                        placeholder="paste text to fact check here . . . ."
                         className="xs:w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
                         value={sourceText}  
                         onChange={(e) => setSourceText(e.target.value)}
@@ -95,13 +95,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             </div> 
           </div>
         </div>
-      </div>
-      <div className="text-xs text-zinc-500">
-          by continuing, you agree to{" "}
-        <Link href="#" className="underline hover:text-white">
-            terms and ethics of use
-        </Link>
-      </div>
+      </div> 
     </>
   );
 };  
