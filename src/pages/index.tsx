@@ -120,14 +120,7 @@ export default function Home() {
       setSourceReady(false);
       return; 
     }  
-  };
-
-  useEffect(() => {
-    if(localSource) { 
-      (async () => await useRouer.replace("?source-custom-text"))();
-      setSourceReady(true);
-    }
-  } , [localSource]); 
+  }; 
 
   return (
     <Layout>
