@@ -7,10 +7,10 @@ interface TextLoadingProps {
 
 export const TextLoading: React.FC<TextLoadingProps> = ({size}) => {
   const Component = <div className="flex">
-    <Skeleton className="h-12 w-12 rounded-full mr-2" />
+    <Skeleton className="md:h-12 xs:h-8 xs:w-8 md:w-12 rounded-full mr-2" />
     <div className="space-y-2">
-      <Skeleton className="h-4 w-[800px]" /> 
-      <Skeleton className="h-4 w-[800px]" /> 
+      <Skeleton className="md:h-4 xs:h-4 xs:w-[250px] md:w-[800px]" /> 
+      <Skeleton className="md:h-4 xs:h-4 xs:w-[250px] md:w-[800px]" /> 
     </div>
   </div>;
   return (

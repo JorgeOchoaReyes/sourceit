@@ -23,17 +23,16 @@ export const SearchView: React.FC<SearchViewProps> = ({
   sourceMutation,
   sourceText,
   setSourceText,
-  chosenMethod,
-  setChosenMethod,
-  loading,
-  setLoading,
+  chosenMethod, 
+  loading, 
   onClickMehod,
   onEnter, 
   setFile
 }) => {
+ 
   return (
     <>
-      <div className="flex flex-col items-center gap-8 max-w-xl w-full">
+      <div className="flex flex-col items-center gap-8 xs:w-full md:w-[500px] p-4">
         <div className="w-24 h-24 relative">
           <img
             src="/sourceit_white.webp"
@@ -41,7 +40,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             className="w-full h-full rounded-3xl"
           />
         </div>
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-4 ">
           <div className="relative">
             {
               (loading || sourceMutation.isPending) ? 
@@ -49,31 +48,38 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   <AnimatedLoading /> 
                 </div>
                 : 
-                <>
-                  <Textarea
-                    placeholder="paste text here. . . ."
-                    className="w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
-                    value={sourceText}  
-                    onChange={(e) => setSourceText(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key === "Enter") { 
-                        await onEnter();
-                      }
-                    }}
-                  /> 
-                  <Input 
-                    type="file" 
-                    className="cursor-pointer mt-1" 
-                    accept=".png,.jpg,.jpeg,.mp3,.pdf,.txt"  
-                    onChange={async (e) => {
-                      setFile(e.target.files?.[0] ?? null);
-                    }}
-                  />
-                </>
+                <div className="w-full space-y-4">
+                  { 
+                    (chosenMethod === "auto" || chosenMethod === "text") ?
+                      <Textarea
+                        placeholder="paste text here. . . ."
+                        className="xs:w-full bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-400"
+                        value={sourceText}  
+                        onChange={(e) => setSourceText(e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key === "Enter") { 
+                            await onEnter();
+                          }
+                        }}
+                      /> : null
+                  }
+                  {
+                  
+                    (chosenMethod === "auto" || chosenMethod === "audio" || chosenMethod === "image") ?
+                      <Input 
+                        type="file" 
+                        className="cursor-pointer mt-1" 
+                        accept=".png,.jpg,.jpeg,.mp3,.pdf,.txt"  
+                        onChange={async (e) => {
+                          setFile(e.target.files?.[0] ?? null);
+                        }}
+                      /> : null
+                  }
+                </div>
             }
           </div>
-          <div className="flex items-center justify-between gap-1 flex-wrap">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between gap-1 flex-wrap w-full">
+            <div className="flex items-center gap-1 flex-wrap">
               <Button variant="ghost" size="sm" className={`${chosenMethod === "auto" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("auto")}>
                 <span className="mr-2"><LightbulbIcon color="#f2c606" /> </span> auto
               </Button> 
