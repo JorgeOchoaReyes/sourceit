@@ -122,6 +122,12 @@ export default function Home() {
     }  
   }; 
 
+  useEffect(() => {
+    if(localSource) {
+      setSourceReady(true);
+    }
+  }, [localSource]);
+
   return (
     <Layout>
       <main className="flex-1 flex flex-col items-center justify-center p-4">
@@ -130,6 +136,7 @@ export default function Home() {
             <LinesSpread 
               textLoading={loading || textFromImageMutation.isPending || textFromPdf.isPending}  
               setSourceReady={setSourceReady}
+              typeOfSource={chosenMethod}
             />
             :
             <SearchView 
