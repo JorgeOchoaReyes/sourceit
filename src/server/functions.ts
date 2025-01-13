@@ -1,4 +1,3 @@
-import youtubeStream from "yt-stream"; 
 import {Storage} from "@google-cloud/storage"; 
 import OpenAI from "openai";   
 import { pipeline } from "stream/promises";
@@ -6,8 +5,13 @@ import { Readable } from "stream";
 import { type SourceParagraph, type StrucutredOutput } from "~/types";
 import vision from "@google-cloud/vision"; 
 import { v1p1beta1 } from "@google-cloud/speech";  
-import { v4 as uuid } from "uuid";
-import type formidable from "formidable";
+import { v4 as uuid } from "uuid"; 
+import { TavilySearchResults } from "@langchain/community/tools/tavily_search";
+import { ChatOpenAI } from "@langchain/openai";
+import { StateGraph, MessagesAnnotation } from "@langchain/langgraph"; 
+import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { HumanMessage } from "@langchain/core/messages";
+ 
 
 const { SpeechClient } = v1p1beta1;
 
@@ -171,4 +175,48 @@ export const convertTextToSourceParagraph = (text: string, sourceId: string) => 
       indexInContext: i,
     } as SourceParagraph;
   });
+};
+
+
+export const factCheckerParagraphv2 = async (raw: string) => {
+  const tools = [new TavilySearchResults({maxResults: 3, apiKey: process.env.tavilyApi})];
+  const toolNode = new ToolNode(tools);
+
+  const model = new ChatOpenAI({
+    model: "gpt-4o-mini",
+    temperature: 0,
+    apiKey: process.env.OPENAPI_KEY,
+  });
+
+  const shouldContinue = ({messages}: typeof MessagesAnnotation.State) => {
+    const lastMessage = messages[messages.length - 1];
+    if(lastMessage?.additional_kwargs.tool_calls) {
+      return "tools"; 
+    }
+    return "__end__"; 
+  };
+
+  const  callModel = async (state: typeof MessagesAnnotation.State) => {
+    const response = await model.invoke(state.messages); 
+    return { 
+      messages: [response]
+    };
+  };
+
+  const workflow = new StateGraph(MessagesAnnotation)
+    .addNode("agent", callModel)
+    .addEdge("__start__", "agent")
+    .addNode("tools", toolNode)
+    .addEdge("tools", "agent")
+    .addConditionalEdges("agent", shouldContinue); 
+
+  const app = workflow.compile(); 
+  const  finalState = await app.invoke({
+    messages: [new HumanMessage(
+      `Fact-check this statement: "${raw}"`
+    )]
+  });
+
+  console.log(finalState?.messages?.[finalState?.messages?.length - 1]?.content);
+
 };
