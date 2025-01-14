@@ -1,8 +1,7 @@
 import React from "react"; 
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { ImageIcon, LightbulbIcon, TextIcon, } from "lucide-react";
-import Link from "next/link";
+import { ImageIcon, LightbulbIcon, TextIcon, } from "lucide-react"; 
 import { AnimatedLoading } from "../loading/AnimatedLoading";
 import { Input } from "../ui/input";
 
@@ -63,14 +62,14 @@ export const SearchView: React.FC<SearchViewProps> = ({
                         }}
                       /> : null
                   }
-                  {
-                  
+                  { 
                     (chosenMethod === "auto" || chosenMethod === "audio" || chosenMethod === "image") ?
                       <Input 
                         type="file" 
                         className="cursor-pointer mt-1" 
                         accept=".png,.jpg,.jpeg,.mp3,.pdf,.txt"  
                         onChange={async (e) => {
+                          setSourceText("");
                           setFile(e.target.files?.[0] ?? null);
                         }}
                       /> : null

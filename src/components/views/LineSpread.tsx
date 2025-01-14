@@ -21,6 +21,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
   const {localSource, clearLocalSource, setLocalSource} = useStore();
   const [chosenParagraph, setChosenParagraph] = React.useState(-1);
   const [factCheckDrawerOpen, setFactCheckDrawerOpen] = React.useState(false);
+  const [chosenModel, setChosenModel] = React.useState("ChatGpt (GPT-4)");
 
   const sourceMutation = api.source.source.useMutation();
 
@@ -40,7 +41,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
     } 
     const factCheckedParagraph = await sourceMutation.mutateAsync({
       raw: foundParagraph?.sourceText ?? "",
-      type: "text"
+      model: chosenModel
     });    
     if(factCheckedParagraph && factCheckedParagraph.reason !== "unknown") { 
       const newSource = {...localSource};
@@ -123,6 +124,8 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
         refactCheck={async () => {
           await onClickFactCheck(chosenParagraph, true);
         }}
+        chosenModel={chosenModel}
+        setChosenModel={setChosenModel}
       />
     </div>
   );
