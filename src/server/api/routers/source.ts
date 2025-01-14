@@ -8,25 +8,26 @@ import {
   factCheckerParagraphv1, 
   uploadImageToStorage, 
   extractTextFromImage,  
+  factCheckerParagraphv2
 } from "~/server/functions"; 
 import { v4 as uuid } from "uuid"; 
 import pdf from "pdf-parse";
 
 export const sourceRouter = createTRPCRouter({
   source: publicProcedure
-    .input(z.object({ raw: z.string(), type: z.string() }))
+    .input(z.object({ raw: z.string(), model: z.string() }))
     .mutation(async ({ input }) => { 
-      try { 
-        console.log("Success!"); 
-        if (input.type === "text") {
+      try {  
+        if (input.model === "ChatGpt (GPT-4)") {
+          console.log("ChatGpt (GPT-4)");
           const source = await factCheckerParagraphv1(input.raw);
           return source;
         }
-        return {
-          validity: "unknown",
-          reason: "unknown",
-          sources: ["unknown"],
-        };
+        else if(input.model === "ReAct Agent w/GPT-4o-mini") {
+          console.log("ReAct Agent w/GPT-4o-mini");
+          const source = await factCheckerParagraphv2(input.raw);
+          return source;
+        }
       } catch (error) { 
         console.log(error);
         return {

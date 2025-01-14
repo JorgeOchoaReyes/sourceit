@@ -1,4 +1,3 @@
-import youtubeStream from "yt-stream"; 
 import {Storage} from "@google-cloud/storage"; 
 import OpenAI from "openai";   
 import { pipeline } from "stream/promises";
@@ -6,8 +5,16 @@ import { Readable } from "stream";
 import { type SourceParagraph, type StrucutredOutput } from "~/types";
 import vision from "@google-cloud/vision"; 
 import { v1p1beta1 } from "@google-cloud/speech";  
-import { v4 as uuid } from "uuid";
-import type formidable from "formidable";
+import { v4 as uuid } from "uuid"; 
+import { TavilySearchResults } from "@langchain/community/tools/tavily_search";
+import { ChatOpenAI } from "@langchain/openai";
+import { Annotation, type MessagesAnnotation, messagesStateReducer, StateGraph } from "@langchain/langgraph";
+import { type BaseMessage } from "@langchain/core/messages"; 
+import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { HumanMessage } from "@langchain/core/messages";
+import { z } from "zod";
+import { tool } from "@langchain/core/tools";
+import { type AIMessage } from "@langchain/core/messages";
 
 const { SpeechClient } = v1p1beta1;
 
@@ -171,4 +178,98 @@ export const convertTextToSourceParagraph = (text: string, sourceId: string) => 
       indexInContext: i,
     } as SourceParagraph;
   });
+};
+ 
+export const factCheckerParagraphv2 = async (raw: string) => {
+  try { 
+    const GraphState = Annotation.Root({
+      messages: Annotation<BaseMessage[]>({
+        reducer: messagesStateReducer,
+      }),
+    });
+    const tools = [new TavilySearchResults({maxResults: 10})];
+    const toolNode = new ToolNode<typeof GraphState.State>(tools);
+
+    const model = new ChatOpenAI({
+      model: "gpt-4o-mini",
+      temperature: 0, 
+    });
+
+    const responseTool = z.object({
+      validity: z.enum(["true", "false", "unknown"]).describe("The validity of the statement."), 
+      fallacies: z.string().describe("A comma separated list of fallacies found in the statement."),
+      reason: z.string().describe("The reason why the statement is true or false."),
+      sources: z.array(z.string()).describe("A list of URL sources that support the validity of the statement."),
+    });
+
+    const finalResponseTool = tool(async () => "", {
+      name: "Response",
+      description: "Always repspond to the user using this tool.",
+      schema: responseTool,
+    }); 
+  
+    const boundModel = model.bindTools([
+      ...tools,
+      finalResponseTool,
+    ]);  
+  
+    const shouldContinue = ({messages}: typeof MessagesAnnotation.State) => {
+      const lastMessage = messages[messages.length - 1] as AIMessage;
+      if (lastMessage.additional_kwargs.tool_calls || (lastMessage.tool_calls && lastMessage.tool_calls.length > 0)) {
+        if (lastMessage?.tool_calls?.[0]?.name === "Response") {
+          return "__end__"; 
+        }
+        return "tools";
+      } 
+      return "__end__";
+    };
+
+    const  callModel = async (state: typeof GraphState.State,) => {
+      const response = await boundModel.invoke(state.messages); 
+      return { 
+        messages: [response]
+      };
+    };
+
+    const workflow = new StateGraph(GraphState)
+      .addNode("agent", callModel)
+      .addNode("tools", toolNode)
+      .addEdge("__start__", "agent")
+      .addConditionalEdges( 
+        "agent", 
+        shouldContinue, 
+        {
+          __end__: "__end__",
+          tools: "tools",
+        }
+      ) 
+      .addEdge("tools", "agent");
+
+    const app = workflow.compile();  
+ 
+    const finalState = await app.invoke({
+      messages: [new HumanMessage(
+        `Search the web to fact-check this statement, provide valid url links. If you can not fact check return null: "${raw}"`
+      )]
+    }); 
+    const res = (finalState?.messages[finalState?.messages?.length - 1] as AIMessage)?.tool_calls?.[0]?.args;
+    if(res) { 
+      return res as StrucutredOutput;
+    } else {
+      return {
+        validity: "unknown",
+        fallacies: "",
+        reason: "unknown",
+        sources: [],
+      };
+    }
+  } catch (error) {
+    console.log(error);
+    return {
+      validity: "unknown",
+      fallacies: "",
+      reason: "unknown",
+      sources: [],
+    };
+  }
 };

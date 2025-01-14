@@ -1,9 +1,7 @@
 import React from "react";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
+  Drawer, 
+  DrawerContent, 
 } from "../ui/drawer";
 import { Button } from "../ui/button";
 import { type SourceParagraph } from "~/types";
@@ -19,6 +17,8 @@ interface FactCheckDrawerProps {
   sourceParagraph: SourceParagraph | null;
   loading: boolean;
   refactCheck: () => Promise<void>;
+  chosenModel: string;
+  setChosenModel: (model: string) => void;
 }
 
 export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
@@ -26,7 +26,9 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
   onClose,
   sourceParagraph,
   loading,
-  refactCheck
+  refactCheck,
+  chosenModel, 
+  setChosenModel
 }) => { 
   return (
     <Drawer open={open} onClose={onClose}  >
@@ -40,7 +42,9 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
             <AITag />  
           </div>
           <div className="flex flex-col-reverse items-center justify-center">
-            <Select value="ChatGpt (GPT-4)" >
+            <Select value={chosenModel} onValueChange={(e) => {
+              setChosenModel(e);
+            }}>
               <SelectTrigger className="md:w-full xs:w-36 xs:text-xs  text-black">
                 <SelectValue placeholder="Select Model" />
               </SelectTrigger>
@@ -48,6 +52,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
                 <SelectGroup>
                   <SelectLabel className="text-black">Models  </SelectLabel>  
                   <SelectItem defaultChecked value="ChatGpt (GPT-4)">ChatGpt (GPT-4)</SelectItem>
+                  <SelectItem defaultChecked value="ReAct Agent w/GPT-4o-mini">ReAct Agent w/GPT-4o-mini</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

@@ -8,17 +8,20 @@ import { api } from "~/utils/api";
 import { motion } from "framer-motion";
 
 interface LinesSpreadProps {
-    setSourceReady: (b: boolean) => void;
-    textLoading: boolean;
+  setSourceReady: (b: boolean) => void;
+  textLoading: boolean;
+  typeOfSource: string;
 }
 
 export const LinesSpread: React.FC<LinesSpreadProps> = ({
   setSourceReady,
-  textLoading
+  textLoading,
+  typeOfSource
 }) => {
   const {localSource, clearLocalSource, setLocalSource} = useStore();
   const [chosenParagraph, setChosenParagraph] = React.useState(-1);
   const [factCheckDrawerOpen, setFactCheckDrawerOpen] = React.useState(false);
+  const [chosenModel, setChosenModel] = React.useState("ChatGpt (GPT-4)");
 
   const sourceMutation = api.source.source.useMutation();
 
@@ -38,7 +41,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
     } 
     const factCheckedParagraph = await sourceMutation.mutateAsync({
       raw: foundParagraph?.sourceText ?? "",
-      type: "text"
+      model: chosenModel
     });    
     if(factCheckedParagraph && factCheckedParagraph.reason !== "unknown") { 
       const newSource = {...localSource};
@@ -54,7 +57,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
     <div className="flex flex-col items-start justify-start h-full mt-10 w-full md:p-4"> 
       {
         textLoading ? 
-          <TextLoading />  
+          <TextLoading sourceType={typeOfSource} />  
           :
           <>
             <div className="flex flex-row items-center justify-between w-full mb-20"> 
@@ -121,6 +124,8 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
         refactCheck={async () => {
           await onClickFactCheck(chosenParagraph, true);
         }}
+        chosenModel={chosenModel}
+        setChosenModel={setChosenModel}
       />
     </div>
   );
