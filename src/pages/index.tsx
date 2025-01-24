@@ -66,10 +66,7 @@ export default function Home() {
                 <Button variant="ghost" size="sm" className={`${chosenMethod === "text" ? "opacity-100" : "opacity-50"} hover:opacity-100`} onClick={() => onClickMehod("text")}>
                   <span className="mr-2"> <TextIcon /> </span> text
                 </Button> 
-              </div>
-              {/* <Button variant="ghost" size="sm">
-                📋 paste
-              </Button> */}
+              </div> 
             </div>
           </div>
         </div>
