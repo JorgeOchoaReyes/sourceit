@@ -21,7 +21,7 @@ export const LinesSpread: React.FC<LinesSpreadProps> = ({
   const {localSource, clearLocalSource, setLocalSource} = useStore();
   const [chosenParagraph, setChosenParagraph] = React.useState(-1);
   const [factCheckDrawerOpen, setFactCheckDrawerOpen] = React.useState(false);
-  const [chosenModel, setChosenModel] = React.useState("ChatGpt (GPT-4)");
+  const [chosenModel, setChosenModel] = React.useState("ReAct Agent w/GPT-4o-mini");
 
   const sourceMutation = api.source.source.useMutation();
 

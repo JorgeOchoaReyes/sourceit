@@ -50,8 +50,7 @@ export const FactCheckDrawer: React.FC<FactCheckDrawerProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel className="text-black">Models  </SelectLabel>  
-                  <SelectItem defaultChecked value="ChatGpt (GPT-4)">ChatGpt (GPT-4)</SelectItem>
+                  <SelectLabel className="text-black">Models  </SelectLabel>   
                   <SelectItem defaultChecked value="ReAct Agent w/GPT-4o-mini">ReAct Agent w/GPT-4o-mini</SelectItem>
                 </SelectGroup>
               </SelectContent>
