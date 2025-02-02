@@ -1,11 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc"; 
-import { 
-  factCheckerParagraphv1, 
+import {  
   uploadImageToStorage, 
   extractTextFromImage,  
   factCheckerParagraphv2
@@ -17,17 +12,10 @@ export const sourceRouter = createTRPCRouter({
   source: publicProcedure
     .input(z.object({ raw: z.string(), model: z.string() }))
     .mutation(async ({ input }) => { 
-      try {  
-        if (input.model === "ChatGpt (GPT-4)") {
-          console.log("ChatGpt (GPT-4)");
-          const source = await factCheckerParagraphv1(input.raw);
-          return source;
-        }
-        else if(input.model === "ReAct Agent w/GPT-4o-mini") {
-          console.log("ReAct Agent w/GPT-4o-mini");
-          const source = await factCheckerParagraphv2(input.raw);
-          return source;
-        }
+      try {   
+        console.log("ReAct Agent w/GPT-4o-mini");
+        const source = await factCheckerParagraphv2(input.raw);
+        return source; 
       } catch (error) { 
         console.log(error);
         return {
