@@ -4,8 +4,7 @@
 import { Layout } from "~/components/layout"; 
 import React, { useEffect } from "react"; 
 import { api } from "~/utils/api"; 
-import { SearchView } from "~/components/views/searchVIew";
-import router from "next/router";
+import { SearchView } from "~/components/views/searchVIew"; 
 import { determineTypeOfContent, convertTextToSourceParagraph } from "~/utils/functions";
 import { type Source } from "~/types";
 import {v4 as uuid} from "uuid";
